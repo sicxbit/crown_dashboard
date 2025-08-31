@@ -24,8 +24,8 @@ const Login: React.FC = () => {
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
-            <div className="mx-auto h-12 w-12 bg-blue-600 rounded-xl flex items-center justify-center mb-4">
-              <LogIn className="h-6 w-6 text-white" />
+            <div className="mx-auto h-16 w-16 mb-4">
+              <img src="./logo.png" alt="Crown Caregivers" className="w-full h-full object-contain scale-150" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
             <p className="text-gray-600">Sign in to Crown Caregivers dashboard</p>
