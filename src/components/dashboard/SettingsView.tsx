@@ -282,11 +282,11 @@ const SettingsView: React.FC = () => {
         <div className="bg-gray-50 rounded-lg p-4 space-y-3">
           <div className="flex justify-between">
             <span className="text-sm text-gray-600">Version</span>
-            <span className="text-sm font-medium text-gray-900">1.0.0</span>
+            <span className="text-sm font-medium text-gray-900">1.0.2</span>
           </div>
           <div className="flex justify-between">
             <span className="text-sm text-gray-600">Last Updated</span>
-            <span className="text-sm font-medium text-gray-900">January 2025</span>
+            <span className="text-sm font-medium text-gray-900">August 2025</span>
           </div>
           <div className="flex justify-between">
             <span className="text-sm text-gray-600">Support</span>

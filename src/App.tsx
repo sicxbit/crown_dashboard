@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { AuthProvider } from './contexts/AuthContext';
 import { QueryProvider } from './contexts/QueryContext';
 import { TeamProvider } from './contexts/TeamContext';

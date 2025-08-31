@@ -28,7 +28,7 @@ export const useAuth = () => {
 // Mock users for demo
 const mockUsers: User[] = [
   { id: '1', name: 'Jemond White', email: 'admin@crowncaregivers.com', role: 'admin' },
-  { id: '2', name: 'Arunjith T S', email: 'manager@crowncaregivers.com', role: 'manager' },
+  { id: '2', name: 'Natasha White', email: 'manager@crowncaregivers.com', role: 'manager' },
   { id: '3', name: 'Bob Agent', email: 'agent@crowncaregivers.com', role: 'agent' },
 ];
 
