@@ -34,8 +34,8 @@ export const useTeam = () => {
 const mockMembers: TeamMember[] = [
   {
     id: '1',
-    name: 'Jemond White',
-    email: 'admin@crowncaregivers.com',
+    name: 'Jon don',
+    email: 'admin@yourdomain.com',
     role: 'admin',
     status: 'active',
     joinedAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
@@ -43,8 +43,8 @@ const mockMembers: TeamMember[] = [
   },
   {
     id: '2',
-    name: 'Natasha White',
-    email: 'manager@crowncaregivers.com',
+    name: 'Natalie',
+    email: 'manager@yourdomain.com',
     role: 'manager',
     status: 'active',
     joinedAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000),
@@ -53,7 +53,7 @@ const mockMembers: TeamMember[] = [
   {
     id: '3',
     name: 'Bob Agent',
-    email: 'agent@crowncaregivers.com',
+    email: 'agent@yourdomain.com',
     role: 'agent',
     status: 'active',
     joinedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
@@ -62,7 +62,7 @@ const mockMembers: TeamMember[] = [
   {
     id: '4',
     name: 'Sarah Agent',
-    email: 'sarah@crowncaregivers.com',
+    email: 'sarah@yourdomain.com',
     role: 'agent',
     status: 'active',
     joinedAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),

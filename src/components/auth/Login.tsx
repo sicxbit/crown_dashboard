@@ -90,9 +90,9 @@ const Login: React.FC = () => {
             <div className="text-sm text-gray-600">
               <p className="font-medium mb-2">Demo Accounts:</p>
               <div className="space-y-1 text-xs">
-                <p>Admin: admin@crowncaregivers.com (any password)</p>
-                <p>Manager: manager@crowncaregivers.com (any password)</p>
-                <p>Agent: agent@crowncaregivers.com (any password)</p>
+                <p>Admin: admin@yourdomain.com (any password)</p>
+                <p>Manager: manager@yourdomain.com (any password)</p>
+                <p>Agent: agent@yourdomain.com (any password)</p>
               </div>
             </div>
           </div>

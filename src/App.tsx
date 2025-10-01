@@ -4,16 +4,20 @@ import { QueryProvider } from './contexts/QueryContext';
 import { TeamProvider } from './contexts/TeamContext';
 import AppRouter from './components/AppRouter';
 import './index.css';
+import { ThemeProvider } from './components/dashboard/Themecontext';
 
 function App() {
   return (
-    <AuthProvider>
-      <QueryProvider>
-        <TeamProvider>
-          <AppRouter />
-        </TeamProvider>
-      </QueryProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <TeamProvider>
+        <QueryProvider>
+          <AuthProvider>
+            <AppRouter />
+          </AuthProvider>
+        </QueryProvider>
+      </TeamProvider>
+    </ThemeProvider>
+
   );
 }
 

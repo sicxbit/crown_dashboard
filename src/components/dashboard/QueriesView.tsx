@@ -45,7 +45,7 @@ const QueriesView: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="min-h-screen w-full bg-gray-50 p-4 md:p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Client Request Management</h1>

@@ -54,7 +54,7 @@ const Dashboard: React.FC = () => {
 
       <div className="flex-1 flex flex-col lg:ml-64">
         <Header onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1">
+        <main className="flex-1 min-w-0 ">
           {renderView()}
         </main>
       </div>

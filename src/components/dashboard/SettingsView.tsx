@@ -12,10 +12,13 @@ import {
   EyeOff
 } from 'lucide-react';
 
+import { useTheme } from './Themecontext';
+
 const SettingsView: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [showPassword, setShowPassword] = useState(false);
+  const { theme, setTheme } = useTheme();
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -231,6 +234,7 @@ const SettingsView: React.FC = () => {
   );
 
   const renderPreferencesTab = () => (
+    
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium text-gray-900 mb-4">Display Preferences</h3>
@@ -238,14 +242,15 @@ const SettingsView: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Theme</label>
             <select
-              value={formData.theme}
-              onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-              <option value="auto">Auto (System)</option>
-            </select>
+  value={theme}
+  onChange={(e) => setTheme(e.target.value as "light" | "dark" | "auto")}
+  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+>
+  <option value="light">Light</option>
+  <option value="dark">Dark</option>
+  <option value="auto">Auto (System)</option>
+</select>
+
           </div>
 
           <div>
