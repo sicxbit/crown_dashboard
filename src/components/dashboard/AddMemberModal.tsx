@@ -33,15 +33,15 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl p-4 md:p-6 w-full max-w-md">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6 w-full max-w-md border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
-            <UserPlus className="h-6 w-6 text-blue-600 mr-2" />
-            <h2 className="text-lg md:text-xl font-semibold text-gray-900">Add Team Member</h2>
+            <UserPlus className="h-6 w-6 text-blue-600 dark:text-blue-400 mr-2" />
+            <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">Add Team Member</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -49,7 +49,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose }) => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Full Name
             </label>
             <input
@@ -57,14 +57,14 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose }) => {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter full name"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Email Address
             </label>
             <input
@@ -72,21 +72,21 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose }) => {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter email address"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Role & Permissions
             </label>
             <select
               id="role"
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'manager' | 'agent' })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             >
               <option value="agent">Care Coordinator - Can view and respond to assigned requests</option>
               <option value="manager">Care Manager - Can manage requests and assign them</option>
@@ -94,9 +94,9 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose }) => {
             </select>
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-gray-900 mb-2">Role Permissions</h3>
-            <div className="text-xs text-gray-600 space-y-1 max-h-24 overflow-y-auto">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Role Permissions</h3>
+            <div className="text-xs text-gray-600 dark:text-gray-300 space-y-1 max-h-24 overflow-y-auto">
               {formData.role === 'agent' && (
                 <>
                   <p>• View and respond to assigned care requests</p>
@@ -127,7 +127,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose }) => {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-lg transition-colors text-sm md:text-base"
+              className="flex-1 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-100 font-medium py-3 px-4 rounded-lg transition-colors text-sm md:text-base"
             >
               Cancel
             </button>

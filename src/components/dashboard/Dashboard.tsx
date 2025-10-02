@@ -28,7 +28,8 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex relative">
+    <div className="min-h-screen flex relative bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -39,8 +40,7 @@ const Dashboard: React.FC = () => {
 
       {/* Sidebar */}
       <div
-        className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } lg:translate-x-0 fixed inset-y-0 left-0 z-50 w-64 transition-transform duration-300 ease-in-out`}
+        className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed inset-y-0 left-0 z-50 w-64 transition-transform duration-300 ease-in-out`}
       >
         <Sidebar
           currentView={currentView}
@@ -51,10 +51,10 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-
+      {/* Main content */}
       <div className="flex-1 flex flex-col lg:ml-64">
         <Header onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 min-w-0 ">
+        <main className="flex-1 min-w-0 p-4 bg-gray-50 dark:bg-gray-900 transition-colors">
           {renderView()}
         </main>
       </div>
