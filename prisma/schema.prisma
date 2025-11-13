@@ -1,0 +1,221 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid()) @map("id")
+  firebaseUid  String    @unique @map("firebase_uid")
+  email        String?   @map("email")
+  role         String    @map("role")
+  caregiverId  String?   @map("caregiver_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  caregiver    Caregiver? @relation("CaregiverUser", fields: [caregiverId], references: [id])
+
+  @@map("users")
+}
+
+model Referral {
+  id           String   @id @default(uuid())
+  source       String   @map("source")
+  contactName  String?  @map("contact_name")
+  phone        String?  @map("phone")
+  email        String?  @map("email")
+  notes        String?  @map("notes")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  clients      Client[]
+
+  @@map("referrals")
+}
+
+model Client {
+  id                 String                @id @default(uuid())
+  code               String                @unique @map("code")
+  firstName          String                @map("first_name")
+  lastName           String                @map("last_name")
+  dob                DateTime?             @map("dob")
+  phone              String?               @map("phone")
+  email              String?               @map("email")
+  addressLine1       String?               @map("address_line1")
+  addressLine2       String?               @map("address_line2")
+  city               String?               @map("city")
+  state              String?               @map("state")
+  zip                String?               @map("zip")
+  emergencyName      String?               @map("emergency_name")
+  emergencyPhone     String?               @map("emergency_phone")
+  primaryInsurance   String?               @map("primary_insurance")
+  insuranceMemberId  String?               @map("insurance_member_id")
+  referralId         String?               @map("referral_id")
+  assessmentDate     DateTime?             @map("assessment_date")
+  riskLevel          String?               @map("risk_level")
+  status             String                @map("status")
+  notes              String?               @map("notes")
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
+
+  referral           Referral?             @relation(fields: [referralId], references: [id])
+  assignments        CaregiverAssignment[]
+  assessments        Assessment[]
+  servicePlans       ServicePlan[]
+  visitLogs          VisitLog[]
+  incidents          Incident[]
+
+  @@map("clients")
+}
+
+model Caregiver {
+  id             String                @id @default(uuid())
+  employeeCode   String?               @map("employee_code")
+  firstName      String                @map("first_name")
+  lastName       String                @map("last_name")
+  dob            DateTime?             @map("dob")
+  phone          String?               @map("phone")
+  email          String?               @map("email")
+  addressLine1   String?               @map("address_line1")
+  addressLine2   String?               @map("address_line2")
+  city           String?               @map("city")
+  state          String?               @map("state")
+  zip            String?               @map("zip")
+  sandataEvvId   String?               @map("sandata_evv_id")
+  status         String                @map("status")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+
+  user           User?                 @relation("CaregiverUser")
+  assignments    CaregiverAssignment[]
+  compliance     ComplianceItem[]
+  training       TrainingRecord[]
+  visitLogs      VisitLog[]
+  incidents      Incident[]
+
+  @@map("caregivers")
+}
+
+model CaregiverAssignment {
+  id          String    @id @default(uuid())
+  clientId    String    @map("client_id")
+  caregiverId String    @map("caregiver_id")
+  startDate   DateTime  @map("start_date")
+  endDate     DateTime? @map("end_date")
+  isPrimary   Boolean   @default(false) @map("is_primary")
+  notes       String?   @map("notes")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  client      Client    @relation(fields: [clientId], references: [id])
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id])
+
+  @@index([clientId], map: "idx_assignments_client")
+  @@index([caregiverId], map: "idx_assignments_caregiver")
+  @@map("caregiver_assignments")
+}
+
+model Assessment {
+  id             String   @id @default(uuid())
+  clientId       String   @map("client_id")
+  assessmentDate DateTime @map("assessment_date")
+  summary        String?  @map("summary")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  client         Client   @relation(fields: [clientId], references: [id])
+
+  @@map("assessments")
+}
+
+model ServicePlan {
+  id            String   @id @default(uuid())
+  clientId      String   @map("client_id")
+  effectiveDate DateTime @map("effective_date")
+  hoursPerWeek  Int      @map("hours_per_week")
+  tasksJson     Json     @map("tasks_json")
+  isActive      Boolean  @default(false) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  client        Client   @relation(fields: [clientId], references: [id])
+
+  @@map("service_plans")
+}
+
+model VisitLog {
+  id            String    @id @default(uuid())
+  clientId      String    @map("client_id")
+  caregiverId   String    @map("caregiver_id")
+  scheduledStart DateTime? @map("scheduled_start")
+  scheduledEnd   DateTime? @map("scheduled_end")
+  actualStart   DateTime?  @map("actual_start")
+  actualEnd     DateTime?  @map("actual_end")
+  serviceCode   String?    @map("service_code")
+  notes         String?    @map("notes")
+  hasIncident   Boolean    @default(false) @map("has_incident")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  client        Client     @relation(fields: [clientId], references: [id])
+  caregiver     Caregiver  @relation(fields: [caregiverId], references: [id])
+
+  @@index([clientId], map: "idx_visit_logs_client")
+  @@index([caregiverId], map: "idx_visit_logs_caregiver")
+  @@map("visit_logs")
+}
+
+model ComplianceItem {
+  id             String   @id @default(uuid())
+  caregiverId    String   @map("caregiver_id")
+  itemType       String   @map("item_type")
+  status         String   @map("status")
+  issuedDate     DateTime? @map("issued_date")
+  expirationDate DateTime? @map("expiration_date")
+  notes          String?  @map("notes")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  caregiver      Caregiver @relation(fields: [caregiverId], references: [id])
+
+  @@index([caregiverId], map: "idx_compliance_caregiver")
+  @@map("compliance_items")
+}
+
+model TrainingRecord {
+  id             String   @id @default(uuid())
+  caregiverId    String   @map("caregiver_id")
+  courseName     String   @map("course_name")
+  completedDate  DateTime? @map("completed_date")
+  expirationDate DateTime? @map("expiration_date")
+  hours          Int?     @map("hours")
+  notes          String?  @map("notes")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  caregiver      Caregiver @relation(fields: [caregiverId], references: [id])
+
+  @@index([caregiverId], map: "idx_training_caregiver")
+  @@map("training_records")
+}
+
+model Incident {
+  id           String    @id @default(uuid())
+  clientId     String    @map("client_id")
+  caregiverId  String?   @map("caregiver_id")
+  incidentDate DateTime  @map("incident_date")
+  description  String    @map("description")
+  status       String    @map("status")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  client       Client    @relation(fields: [clientId], references: [id])
+  caregiver    Caregiver? @relation(fields: [caregiverId], references: [id])
+
+  @@index([clientId], map: "idx_incidents_client")
+  @@index([caregiverId], map: "idx_incidents_caregiver")
+  @@map("incidents")
+}
