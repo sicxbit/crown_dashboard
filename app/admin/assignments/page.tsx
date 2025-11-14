@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import AssignmentManager from "@/components/admin/AssignmentManager";
+import AdminShell from "@/components/admin/AdminShell";
 
 export default async function AssignmentsPage() {
   const user = await getCurrentUser();
@@ -37,21 +38,23 @@ export default async function AssignmentsPage() {
   ]);
 
   return (
-    <AssignmentManager
-      clients={clients.map((client) => ({
-        id: client.id,
-        code: client.code,
-        name: `${client.firstName} ${client.lastName}`,
-        city: client.city,
-        state: client.state,
-      }))}
-      caregivers={caregivers.map((caregiver) => ({
-        id: caregiver.id,
-        name: `${caregiver.firstName} ${caregiver.lastName}`,
-        phone: caregiver.phone,
-        city: caregiver.city,
-        state: caregiver.state,
-      }))}
-    />
+    <AdminShell user={user} active="assignments">
+      <AssignmentManager
+        clients={clients.map((client) => ({
+          id: client.id,
+          code: client.code,
+          name: `${client.firstName} ${client.lastName}`,
+          city: client.city,
+          state: client.state,
+        }))}
+        caregivers={caregivers.map((caregiver) => ({
+          id: caregiver.id,
+          name: `${caregiver.firstName} ${caregiver.lastName}`,
+          phone: caregiver.phone,
+          city: caregiver.city,
+          state: caregiver.state,
+        }))}
+      />
+    </AdminShell>
   );
 }

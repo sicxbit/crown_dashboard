@@ -22,6 +22,12 @@ export default function HomePage() {
         >
           Caregiver Login
         </Link>
+        <Link
+          className="rounded-lg border border-slate-300 px-6 py-3 text-slate-700 shadow hover:bg-slate-100"
+          href="/tickets"
+        >
+          Submit a Ticket
+        </Link>
       </div>
     </main>
   );

@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { format } from "date-fns";
+import LogoutButton from "@/components/common/LogoutButton";
 
 type ClientSummary = {
   id: string;
@@ -34,11 +36,22 @@ type Props = {
 export default function CaregiverDashboard({ clients }: Props) {
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 p-6">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold text-slate-900">My Assigned Clients</h1>
-        <p className="text-slate-600">
-          Review each client’s plan of care, active tasks, and recent visit outcomes.
-        </p>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-semibold text-slate-900">My Assigned Clients</h1>
+          <p className="text-slate-600">
+            Review each client’s plan of care, active tasks, and recent visit outcomes.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/tickets"
+            className="rounded-md border border-brand-600 px-3 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
+          >
+            Submit Ticket
+          </Link>
+          <LogoutButton redirectTo="/caregiver/login" />
+        </div>
       </header>
 
       {clients.length === 0 ? (
