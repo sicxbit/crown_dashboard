@@ -92,3 +92,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 }
+
+export async function DELETE() {
+  try {
+    cookies().delete("session");
+    return NextResponse.json({ status: "signed_out" });
+  } catch (error) {
+    console.error("Failed to clear session cookie", error);
+    return NextResponse.json({ error: "Unable to sign out" }, { status: 500 });
+  }
+}

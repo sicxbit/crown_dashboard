@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState, useTransition } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   RecaptchaVerifier,
@@ -87,7 +88,10 @@ export default function CaregiverLoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-lg">
-        <h1 className="text-2xl font-semibold text-slate-900">Caregiver Portal Login</h1>
+        <div className="flex justify-center">
+          <Image src="/logo.png" alt="Crown Caregivers" width={160} height={48} className="h-12 w-auto" priority />
+        </div>
+        <h1 className="mt-6 text-2xl font-semibold text-slate-900">Caregiver Portal Login</h1>
         <p className="mt-2 text-sm text-slate-500">
           Enter your mobile number to receive a one-time passcode.
         </p>

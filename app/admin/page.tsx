@@ -3,6 +3,7 @@ import { addDays, isBefore, isWithinInterval } from "date-fns";
 import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import AdminDashboard from "@/components/admin/AdminDashboard";
+import AdminShell from "@/components/admin/AdminShell";
 
 export default async function AdminPage() {
   const user = await getCurrentUser();
@@ -109,10 +110,12 @@ export default async function AdminPage() {
   });
 
   return (
-    <AdminDashboard
-      clients={clientsData}
-      caregivers={caregiversData}
-      referrals={referrals.map((ref) => ({ id: ref.id, source: ref.source }))}
-    />
+    <AdminShell user={user} active="dashboard">
+      <AdminDashboard
+        clients={clientsData}
+        caregivers={caregiversData}
+        referrals={referrals.map((ref) => ({ id: ref.id, source: ref.source }))}
+      />
+    </AdminShell>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState, useTransition } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
@@ -45,7 +46,10 @@ export default function AdminLoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-lg">
-        <h1 className="text-2xl font-semibold text-slate-900">Admin Sign In</h1>
+        <div className="flex justify-center">
+          <Image src="/logo.png" alt="Crown Caregivers" width={160} height={48} className="h-12 w-auto" priority />
+        </div>
+        <h1 className="mt-6 text-2xl font-semibold text-slate-900">Admin Sign In</h1>
         <p className="mt-2 text-sm text-slate-500">
           Use your agency email and password to access the admin dashboard.
         </p>
