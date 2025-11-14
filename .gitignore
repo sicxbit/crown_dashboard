@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 .env
 .next
+
+# Ignoring database for git commit 
+prisma/dev.db
