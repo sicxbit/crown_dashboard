@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -12,7 +12,7 @@ model User {
   firebaseUid  String    @unique @map("firebase_uid")
   email        String?   @map("email")
   role         String    @map("role")
-  caregiverId  String?   @map("caregiver_id")
+  caregiverId  String?   @unique @map("caregiver_id")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
@@ -136,7 +136,7 @@ model ServicePlan {
   clientId      String   @map("client_id")
   effectiveDate DateTime @map("effective_date")
   hoursPerWeek  Int      @map("hours_per_week")
-  tasksJson     Json     @map("tasks_json")
+  tasksJson     String     @map("tasks_json")
   isActive      Boolean  @default(false) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")

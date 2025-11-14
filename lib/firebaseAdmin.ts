@@ -21,7 +21,7 @@ function getConfig(): FirebaseAdminConfig {
   return { projectId, clientEmail, privateKey };
 }
 
-export function getFirebaseAdminApp() {
+export function getFirebaseAdminApp() { 
   if (!getApps().length) {
     const config = getConfig();
     initializeApp({
