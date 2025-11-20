@@ -1,6 +1,0 @@
-{
-  "/admin/login/page": "app/admin/login/page.js",
-  "/api/auth/session/validate/route": "app/api/auth/session/validate/route.js",
-  "/api/auth/session/route": "app/api/auth/session/route.js",
-  "/admin/page": "app/admin/page.js"
-}
