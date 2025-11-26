@@ -10,11 +10,21 @@ async function createOpenAiClient() {
   try {
     // Dynamic import keeps the module optional in environments where it is not installed yet.
     const openaiModule = await import("openai");
-    const OpenAI = (openaiModule as { default?: new (config: { apiKey: string }) => any }).default;
+    const OpenAI = (openaiModule as {
+      default?: new (config: { apiKey: string }) => any;
+    }).default;
+
     if (!OpenAI) {
       return null;
     }
-    return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      console.error("OPENAI_API_KEY is not set");
+      return null;
+    }
+
+    return new OpenAI({ apiKey });
   } catch (error) {
     console.error("OpenAI SDK is not available", error);
     return null;
@@ -56,7 +66,10 @@ async function callOpenAi(prompt: string) {
     throw new Error(`OpenAI API request failed with status ${apiResponse.status}`);
   }
 
-  const payload = (await apiResponse.json()) as { output_text?: string; output?: Array<{ content?: Array<{ text?: string }> }> };
+  const payload = (await apiResponse.json()) as {
+    output_text?: string;
+    output?: Array<{ content?: Array<{ text?: string }> }>;
+  };
   const text = payload.output_text ?? payload.output?.[0]?.content?.[0]?.text ?? "";
   return String(text).trim();
 }
@@ -71,7 +84,10 @@ export async function getSuggestedTicketAssignee(
   }
 
   const memberList = members
-    .map((member) => `${member.id} - ${member.name} (${member.role}): ${member.skills.join(", ")}`)
+    .map(
+      (member) =>
+        `${member.id} - ${member.name} (${member.role}): ${member.skills.join(", ")}`
+    )
     .join("\n");
 
   const prompt = `You are routing internal support tickets for Crown Caregivers.\nChoose exactly ONE assignee ID from the list below.\n\nTeam members:\n${memberList}\n\nTicket:\nTitle: ${title}\nDescription: ${description}\n\nReturn ONLY the id of the best assignee, nothing else.`;
