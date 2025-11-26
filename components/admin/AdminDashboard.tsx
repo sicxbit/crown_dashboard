@@ -59,9 +59,9 @@ type Props = {
 };
 
 const inputClasses =
-  "w-full rounded-md border border-slate-200 px-3 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200";
+  "w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400";
 
-const labelClasses = "text-sm font-medium text-slate-700";
+const labelClasses = "text-sm font-medium text-slate-700 dark:text-slate-200";
 
 function formatDateInput(value: string | null) {
   if (!value) return "";
@@ -262,19 +262,19 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
   return (
     <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 p-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold text-slate-900">Admin Dashboard</h1>
-        <p className="text-slate-600">
+        <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-50">Admin Dashboard</h1>
+        <p className="text-slate-600 dark:text-slate-300">
           Welcome back! Review client and caregiver records and keep information current.
         </p>
       </header>
 
       <section className="grid gap-6 lg:grid-cols-2">
         {/* Clients */}
-        <div className="rounded-xl bg-white shadow">
-          <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+        <div className="rounded-xl border border-slate-200 bg-white shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Clients</h2>
-              <p className="text-sm text-slate-500">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Clients</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-300">
                 Click a client row to view and edit details.
               </p>
             </div>
@@ -290,9 +290,9 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
             </button>
           </div>
           <div className="max-h-[480px] overflow-y-auto">
-            <table className="min-w-full divide-y divide-slate-100">
-              <thead className="bg-slate-50">
-                <tr className="text-left text-sm font-semibold text-slate-600">
+            <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+              <thead className="bg-slate-50 dark:bg-slate-800/50">
+                <tr className="text-left text-sm font-semibold text-slate-600 dark:text-slate-200">
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Code</th>
                   <th className="px-4 py-3">City / State</th>
@@ -301,30 +301,30 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
                   <th className="px-4 py-3">Primary Caregiver</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
+              <tbody className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
                 {sortedClients.map((client) => (
                   <tr
                     key={client.id}
-                    className="cursor-pointer transition hover:bg-brand-50"
+                    className="cursor-pointer transition hover:bg-brand-50 dark:hover:bg-brand-900/30"
                     onClick={() => {
                       setEditingClient(client);
                       setError(null);
                     }}
                   >
-                    <td className="px-4 py-3 font-medium text-slate-900">
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                       {client.firstName} {client.lastName}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{client.code}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{client.code}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {client.city}, {client.state}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                         {client.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{client.riskLevel ?? "-"}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{client.riskLevel ?? "-"}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {client.primaryCaregiver ?? "Unassigned"}
                     </td>
                   </tr>
@@ -335,11 +335,11 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
         </div>
 
         {/* Caregivers */}
-        <div className="rounded-xl bg-white shadow">
-          <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+        <div className="rounded-xl border border-slate-200 bg-white shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Caregivers</h2>
-              <p className="text-sm text-slate-500">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Caregivers</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-300">
                 Review staffing readiness and compliance status.
               </p>
             </div>
@@ -355,9 +355,9 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
             </button>
           </div>
           <div className="max-h-[480px] overflow-y-auto">
-            <table className="min-w-full divide-y divide-slate-100">
-              <thead className="bg-slate-50">
-                <tr className="text-left text-sm font-semibold text-slate-600">
+            <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+              <thead className="bg-slate-50 dark:bg-slate-800/50">
+                <tr className="text-left text-sm font-semibold text-slate-600 dark:text-slate-200">
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Employee Code</th>
                   <th className="px-4 py-3">City / State</th>
@@ -366,34 +366,34 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
                   <th className="px-4 py-3">Compliance</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
+              <tbody className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
                 {sortedCaregivers.map((caregiver) => (
                   <tr
                     key={caregiver.id}
-                    className="cursor-pointer transition hover:bg-brand-50"
+                    className="cursor-pointer transition hover:bg-brand-50 dark:hover:bg-brand-900/30"
                     onClick={() => {
                       setEditingCaregiver(caregiver);
                       setError(null);
                     }}
                   >
-                    <td className="px-4 py-3 font-medium text-slate-900">
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                       {caregiver.firstName} {caregiver.lastName}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {caregiver.employeeCode ?? "-"}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {caregiver.city}, {caregiver.state}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                         {caregiver.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {caregiver.sandataEvvId ?? "-"}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {caregiver.complianceSummary}
                     </td>
                   </tr>
@@ -405,7 +405,7 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
       </section>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/50 dark:bg-red-900/30 dark:text-red-200">
           {error}
         </div>
       )}
@@ -450,14 +450,14 @@ function ClientEditModal({ client, referrals, onClose, onSave, isSaving }: Clien
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl transition-colors dark:bg-slate-900">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-slate-900">
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
             {isNew ? "New Client" : "Edit Client"}
           </h3>
           <button
             onClick={onClose}
-            className="rounded-md px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
+            className="rounded-md px-3 py-1 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             Close
           </button>
@@ -692,14 +692,14 @@ function CaregiverEditModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl transition-colors dark:bg-slate-900">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-slate-900">
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
             {isNew ? "New Caregiver" : "Edit Caregiver"}
           </h3>
           <button
             onClick={onClose}
-            className="rounded-md px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
+            className="rounded-md px-3 py-1 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             Close
           </button>

@@ -38,37 +38,43 @@ export default function CaregiverDashboard({ clients }: Props) {
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 p-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold text-slate-900">My Assigned Clients</h1>
-          <p className="text-slate-600">
+          <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-50">My Assigned Clients</h1>
+          <p className="text-slate-600 dark:text-slate-300">
             Review each client’s plan of care, active tasks, and recent visit outcomes.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Link
             href="/tickets"
-            className="rounded-md border border-brand-600 px-3 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
+            className="rounded-md border border-brand-600 px-3 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50 dark:hover:bg-brand-900/30"
           >
             Submit Ticket
+          </Link>
+          <Link
+            href="/settings"
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+          >
+            Settings
           </Link>
           <LogoutButton redirectTo="/caregiver/login" />
         </div>
       </header>
 
       {clients.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
           You do not have any active assignments yet. Please contact the office for scheduling updates.
         </div>
       ) : (
         <div className="space-y-6">
           {clients.map((entry) => (
-            <section key={entry.id} className="rounded-xl bg-white p-6 shadow">
-              <header className="flex flex-col gap-1 border-b border-slate-100 pb-4">
-                <h2 className="text-xl font-semibold text-slate-900">{entry.client.name}</h2>
-                <div className="text-sm text-slate-500">
+            <section key={entry.id} className="rounded-xl bg-white p-6 shadow transition-colors dark:bg-slate-900 dark:border dark:border-slate-800">
+              <header className="flex flex-col gap-1 border-b border-slate-100 pb-4 dark:border-slate-800">
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{entry.client.name}</h2>
+                <div className="text-sm text-slate-500 dark:text-slate-300">
                   {entry.client.city}, {entry.client.state} • Risk Level: {entry.client.riskLevel ?? "N/A"} • Status: {" "}
-                  <span className="font-medium text-slate-700">{entry.client.status}</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-200">{entry.client.status}</span>
                 </div>
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-slate-400 dark:text-slate-400">
                   Assigned since {format(new Date(entry.startDate), "MMM d, yyyy")}
                 </div>
               </header>
@@ -76,16 +82,16 @@ export default function CaregiverDashboard({ clients }: Props) {
               {entry.servicePlan ? (
                 <div className="mt-4 space-y-3">
                   <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                       Active Service Plan
                     </h3>
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
                       {entry.servicePlan.hoursPerWeek} hours per week
                     </p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-slate-600">Tasks</h4>
-                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+                    <h4 className="text-sm font-semibold text-slate-600 dark:text-slate-200">Tasks</h4>
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
                       {entry.servicePlan.tasks.map((task, index) => (
                         <li key={`${entry.servicePlan?.id}-${index}`}>{task}</li>
                       ))}
@@ -93,43 +99,43 @@ export default function CaregiverDashboard({ clients }: Props) {
                   </div>
                 </div>
               ) : (
-                <div className="mt-4 rounded-md border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                <div className="mt-4 rounded-md border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                   No active service plan is on file for this client.
                 </div>
               )}
 
               <div className="mt-6">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                   Recent Visits
                 </h3>
                 {entry.recentVisits.length === 0 ? (
-                  <p className="mt-3 text-sm text-slate-500">No visits recorded yet.</p>
+                  <p className="mt-3 text-sm text-slate-500 dark:text-slate-300">No visits recorded yet.</p>
                 ) : (
-                  <ul className="mt-3 space-y-3 text-sm text-slate-600">
+                  <ul className="mt-3 space-y-3 text-sm text-slate-600 dark:text-slate-300">
                     {entry.recentVisits.map((visit) => (
                       <li
                         key={visit.id}
-                        className="flex flex-col gap-1 rounded-md border border-slate-200 p-3 shadow-sm"
+                        className="flex flex-col gap-1 rounded-md border border-slate-200 p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div>
-                            <p className="font-medium text-slate-800">
+                            <p className="font-medium text-slate-800 dark:text-slate-100">
                               {visit.actualStart
                                 ? format(new Date(visit.actualStart), "MMM d, yyyy h:mm a")
                                 : "Start time not recorded"}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-slate-500 dark:text-slate-300">
                               {visit.actualEnd
                                 ? `Completed at ${format(new Date(visit.actualEnd), "h:mm a")}`
                                 : "End time not recorded"}
                             </p>
                           </div>
-                          <div className="text-xs uppercase text-slate-500">
+                          <div className="text-xs uppercase text-slate-500 dark:text-slate-300">
                             {visit.serviceCode ?? "No service code"}
                           </div>
                         </div>
                         {visit.hasIncident && (
-                          <span className="inline-flex w-fit items-center rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700">
+                          <span className="inline-flex w-fit items-center rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-900/50 dark:text-red-200">
                             Incident flagged
                           </span>
                         )}

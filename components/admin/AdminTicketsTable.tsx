@@ -21,6 +21,11 @@ type TicketUpdatePayload = Partial<Pick<TicketResponse, "status" | "priority">> 
   assigneeUserId?: string | null;
 };
 
+const inputClasses =
+  "rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
+
+const labelClasses = "text-sm font-medium text-slate-700 dark:text-slate-200";
+
 export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
   const [ticketList, setTicketList] = useState<TicketResponse[]>(tickets);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
@@ -123,23 +128,23 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
 
   return (
     <section className="mx-auto flex max-w-7xl flex-col gap-6 px-6">
-      <header className="flex flex-col gap-4 rounded-xl bg-white p-6 shadow">
+      <header className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold text-slate-900">Support Tickets</h1>
-          <p className="text-sm text-slate-600">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Support Tickets</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Track open issues, manage assignments, and resolve requests quickly.
           </p>
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-slate-700" htmlFor="ticket-status-filter">
+            <label className={labelClasses} htmlFor="ticket-status-filter">
               Status
             </label>
             <select
               id="ticket-status-filter"
               value={filterStatus}
               onChange={(event) => setFilterStatus(event.target.value as FilterStatus)}
-              className="rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              className={inputClasses}
             >
               <option value="all">All</option>
               {STATUS_OPTIONS.map((option) => (
@@ -155,20 +160,20 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search tickets"
-              className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              className={`w-full ${inputClasses}`}
             />
           </div>
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
+        {successMessage && <p className="text-sm text-green-600 dark:text-green-300">{successMessage}</p>}
       </header>
 
       {/* Create Ticket Card */}
-      <div className="rounded-xl bg-white p-6 shadow border border-slate-200">
-        <h2 className="text-lg font-semibold text-slate-900 mb-3">Create Ticket</h2>
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">Create Ticket</h2>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
-            <label className="text-sm font-medium text-slate-700" htmlFor="new-title">
+            <label className={labelClasses} htmlFor="new-title">
               Title
             </label>
             <input
@@ -176,12 +181,12 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
               type="text"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              className={`mt-1 w-full ${inputClasses}`}
               placeholder="Short summary of the issue"
             />
           </div>
           <div className="md:col-span-2">
-            <label className="text-sm font-medium text-slate-700" htmlFor="new-description">
+            <label className={labelClasses} htmlFor="new-description">
               Description
             </label>
             <textarea
@@ -189,12 +194,12 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
               rows={3}
-              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              className={`mt-1 w-full ${inputClasses}`}
               placeholder="Include relevant details, steps to reproduce, etc."
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700" htmlFor="new-priority">
+            <label className={labelClasses} htmlFor="new-priority">
               Priority
             </label>
             <select
@@ -203,7 +208,7 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
               onChange={(e) =>
                 setNewPriority(e.target.value as TicketResponse["priority"])
               }
-              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              className={`mt-1 w-full ${inputClasses}`}
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -216,7 +221,7 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
             type="button"
             onClick={resetCreateForm}
             disabled={isCreating}
-            className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed"
+            className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             Clear
           </button>
@@ -224,27 +229,27 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
             type="button"
             onClick={handleCreateTicket}
             disabled={isCreating}
-            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-brand-400"
+            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:bg-brand-400"
           >
             {isCreating ? "Creating…" : "Create Ticket"}
           </button>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
+          <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
+            <thead className="bg-slate-50 dark:bg-slate-800/50">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Ticket</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Created By</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Assignee</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Status</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Priority</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Created</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Ticket</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Created By</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Assignee</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Status</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Priority</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {filteredTickets.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
