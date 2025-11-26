@@ -7,26 +7,31 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Dependencies / builds
+node_modules/
+dist/
+dist-ssr/
+.next/
+out/
 
-#this was our primary headache ( simple but still let this be a lesson )
-.next
+# Local config
+*.local
+.env
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-.env
-.next
 
-# Ignoring database for git commit 
+# Prisma / database
 prisma/dev.db
+prisma/dev.db-journal
+.prisma/
+*.db
+*.sqlite
