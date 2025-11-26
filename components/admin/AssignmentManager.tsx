@@ -189,24 +189,24 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
   return (
     <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 p-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold text-slate-900">
+        <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-50">
           Caregiver Assignments
         </h1>
-        <p className="text-slate-600">
+        <p className="text-slate-600 dark:text-slate-300">
           Match clients with caregivers and keep assignment history accurate.
         </p>
       </header>
 
       <section className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <div className="rounded-xl bg-white shadow">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">Clients</h2>
+        <div className="rounded-xl border border-slate-200 bg-white shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
+          <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Clients</h2>
             <div className="mt-3">
               <input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search by name or code"
-                className="w-full rounded-md border border-slate-200 px-3 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                className="w-full rounded-md border border-slate-200 px-3 py-2 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
               />
             </div>
           </div>
@@ -217,18 +217,18 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                 <button
                   key={client.id}
                   onClick={() => setSelectedClientId(client.id)}
-                  className={`flex w-full items-start justify-between border-b border-slate-100 px-6 py-4 text-left transition hover:bg-brand-50 ${
-                    isSelected ? "bg-brand-50" : "bg-white"
+                  className={`flex w-full items-start justify-between border-b border-slate-100 px-6 py-4 text-left transition hover:bg-brand-50 dark:border-slate-800 dark:hover:bg-brand-900/30 ${
+                    isSelected ? "bg-brand-50 dark:bg-brand-900/30" : "bg-white dark:bg-slate-900"
                   }`}
                 >
                   <div>
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-slate-900 dark:text-slate-100">
                       {client.name}
                       <span className="ml-2 text-xs font-semibold text-brand-600">
                         {client.code}
                       </span>
                     </p>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-slate-500 dark:text-slate-300">
                       {client.city}, {client.state}
                     </p>
                   </div>
@@ -238,12 +238,12 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
           </div>
         </div>
 
-        <div className="rounded-xl bg-white shadow">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">
+        <div className="rounded-xl border border-slate-200 bg-white shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
+          <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               Active Caregivers
             </h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-300">
               Select a caregiver to include them in the assignment form.
             </p>
           </div>
@@ -254,13 +254,13 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                 <button
                   key={caregiver.id}
                   onClick={() => setSelectedCaregiverId(caregiver.id)}
-                  className={`flex w-full items-start justify-between border-b border-slate-100 px-6 py-4 text-left transition hover:bg-brand-50 ${
-                    isSelected ? "bg-brand-50" : "bg-white"
+                  className={`flex w-full items-start justify-between border-b border-slate-100 px-6 py-4 text-left transition hover:bg-brand-50 dark:border-slate-800 dark:hover:bg-brand-900/30 ${
+                    isSelected ? "bg-brand-50 dark:bg-brand-900/30" : "bg-white dark:bg-slate-900"
                   }`}
                 >
                   <div>
-                    <p className="font-medium text-slate-900">{caregiver.name}</p>
-                    <p className="text-sm text-slate-500">
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{caregiver.name}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-300">
                       {caregiver.city}, {caregiver.state} •{" "}
                       {caregiver.phone ?? "No phone"}
                     </p>
@@ -278,28 +278,28 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <div className="rounded-xl bg-white shadow">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">
+        <div className="rounded-xl border border-slate-200 bg-white shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
+          <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               Assignment History
             </h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-300">
               Active assignments appear at the top. End assignments when coverage
               changes.
             </p>
           </div>
           <div className="max-h-[400px] overflow-y-auto">
             {loadingAssignments ? (
-              <div className="px-6 py-8 text-sm text-slate-500">
+              <div className="px-6 py-8 text-sm text-slate-500 dark:text-slate-300">
                 Loading assignments…
               </div>
             ) : assignments.length === 0 ? (
-              <div className="px-6 py-8 text-sm text-slate-500">
+              <div className="px-6 py-8 text-sm text-slate-500 dark:text-slate-300">
                 No assignments yet.
               </div>
             ) : (
-              <table className="min-w-full divide-y divide-slate-100">
-                <thead className="bg-slate-50 text-left text-sm font-semibold text-slate-600">
+              <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+                <thead className="bg-slate-50 text-left text-sm font-semibold text-slate-600 dark:bg-slate-800/50 dark:text-slate-200">
                   <tr>
                     <th className="px-4 py-3">Caregiver</th>
                     <th className="px-4 py-3">Start</th>
@@ -309,35 +309,35 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
+                <tbody className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
                   {assignments.map((assignment) => {
                     const isActive = !assignment.endDate;
                     return (
                       <tr
                         key={assignment.id}
-                        className={isActive ? "bg-brand-50/30" : "bg-white"}
+                        className={isActive ? "bg-brand-50/30 dark:bg-brand-900/30" : "bg-white dark:bg-slate-900"}
                       >
-                        <td className="px-4 py-3 font-medium text-slate-900">
+                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                           {assignment.caregiverName}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                           {format(new Date(assignment.startDate), "MMM d, yyyy")}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                           {assignment.endDate
                             ? format(new Date(assignment.endDate), "MMM d, yyyy")
                             : "Active"}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                           {assignment.isPrimary ? (
-                            <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
+                            <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
                               Primary
                             </span>
                           ) : (
                             "-"
                           )}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                           {assignment.notes ?? ""}
                         </td>
                         <td className="px-4 py-3 space-x-2 text-right">
@@ -346,14 +346,14 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                               {!assignment.isPrimary && (
                                 <button
                                   onClick={() => handleMakePrimary(assignment.id)}
-                                  className="rounded-md border border-emerald-300 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50"
+                                  className="rounded-md border border-emerald-300 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
                                 >
                                   Make Primary
                                 </button>
                               )}
                               <button
                                 onClick={() => handleEndAssignment(assignment.id)}
-                                className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100"
+                                className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                               >
                                 End Today
                               </button>
@@ -369,21 +369,21 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
           </div>
         </div>
 
-        <div className="rounded-xl bg-white shadow">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">
+        <div className="rounded-xl border border-slate-200 bg-white shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
+          <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               Create Assignment
             </h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-300">
               Choose a caregiver from the list and define the coverage details.
             </p>
           </div>
           <form className="space-y-4 px-6 py-6" onSubmit={handleCreateAssignment}>
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Selected Caregiver
               </label>
-              <div className="rounded-md border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600">
+              <div className="rounded-md border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-200">
                 {selectedCaregiverId
                   ? activeCaregivers.find((c) => c.id === selectedCaregiverId)?.name
                   : "No caregiver selected"}
@@ -391,7 +391,7 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
             </div>
             <div>
               <label
-                className="text-sm font-medium text-slate-700"
+                className="text-sm font-medium text-slate-700 dark:text-slate-200"
                 htmlFor="startDate"
               >
                 Start Date
@@ -402,12 +402,12 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                 required
                 value={startDate}
                 onChange={(event) => setStartDate(event.target.value)}
-                className="w-full rounded-md border border-slate-200 px-3 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                className="w-full rounded-md border border-slate-200 px-3 py-2 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
               />
             </div>
             <div>
               <label
-                className="text-sm font-medium text-slate-700"
+                className="text-sm font-medium text-slate-700 dark:text-slate-200"
                 htmlFor="endDate"
               >
                 End Date (optional)
@@ -417,7 +417,7 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                 type="date"
                 value={endDate}
                 onChange={(event) => setEndDate(event.target.value)}
-                className="w-full rounded-md border border-slate-200 px-3 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                className="w-full rounded-md border border-slate-200 px-3 py-2 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -427,13 +427,13 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                 checked={isPrimary}
                 onChange={(event) => setIsPrimary(event.target.checked)}
               />
-              <label htmlFor="isPrimary" className="text-sm text-slate-700">
+              <label htmlFor="isPrimary" className="text-sm text-slate-700 dark:text-slate-200">
                 Set as primary caregiver
               </label>
             </div>
             <div>
               <label
-                className="text-sm font-medium text-slate-700"
+                className="text-sm font-medium text-slate-700 dark:text-slate-200"
                 htmlFor="notes"
               >
                 Notes
@@ -442,17 +442,17 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                 id="notes"
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
-                className="w-full rounded-md border border-slate-200 px-3 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                className="w-full rounded-md border border-slate-200 px-3 py-2 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 rows={3}
               />
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
             {successMessage && (
-              <p className="text-sm text-emerald-600">{successMessage}</p>
+              <p className="text-sm text-emerald-600 dark:text-emerald-300">{successMessage}</p>
             )}
             <button
               type="submit"
-              className="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-brand-400"
+              className="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:bg-brand-400"
             >
               Save Assignment
             </button>
