@@ -55,3 +55,89 @@ export async function GET() {
     })
   );
 }
+
+export async function POST(request: Request) {
+  try {
+    await requireApiUserRole("admin");
+  } catch (error) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await request.json();
+
+  const {
+    employeeCode,
+    firstName,
+    lastName,
+    dob,
+    phone,
+    email,
+    addressLine1,
+    addressLine2,
+    city,
+    state,
+    zip,
+    sandataEvvId,
+    status,
+  } = body as {
+    employeeCode?: string | null;
+    firstName?: string;
+    lastName?: string;
+    dob?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    addressLine1?: string | null;
+    addressLine2?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zip?: string | null;
+    sandataEvvId?: string | null;
+    status?: string;
+  };
+
+  if (!firstName || !lastName || !status) {
+    return NextResponse.json(
+      { error: "firstName, lastName and status are required" },
+      { status: 400 }
+    );
+  }
+
+  let parsedDob: Date | null = null;
+  if (dob) {
+    const d = new Date(dob);
+    if (Number.isNaN(d.getTime())) {
+      return NextResponse.json({ error: "Invalid dob" }, { status: 400 });
+    }
+    parsedDob = d;
+  }
+
+  try {
+    const caregiver = await prisma.caregiver.create({
+      data: {
+        employeeCode: employeeCode ?? null,
+        firstName,
+        lastName,
+        dob: parsedDob,
+        phone: phone ?? null,
+        email: email ?? null,
+        addressLine1: addressLine1 ?? null,
+        addressLine2: addressLine2 ?? null,
+        city: city ?? null,
+        state: state ?? null,
+        zip: zip ?? null,
+        sandataEvvId: sandataEvvId ?? null,
+        status,
+      },
+    });
+
+    // you can return just the raw caregiver, or match the GET shape
+    // for now, simple is fine – the AdminDashboard doesn't depend on this body
+    return NextResponse.json(caregiver, { status: 201 });
+  } catch (error) {
+    console.error("Failed to create caregiver", error);
+    return NextResponse.json(
+      { error: "Unable to create caregiver" },
+      { status: 500 }
+    );
+  }
+}

@@ -29,15 +29,19 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // create-ticket state
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newPriority, setNewPriority] = useState<TicketResponse["priority"]>("medium");
+  const [isCreating, setIsCreating] = useState(false);
+
   const filteredTickets = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     return ticketList.filter((ticket) => {
       if (filterStatus !== "all" && ticket.status !== filterStatus) {
         return false;
       }
-      if (!term) {
-        return true;
-      }
+      if (!term) return true;
       return (
         ticket.title.toLowerCase().includes(term) ||
         ticket.description.toLowerCase().includes(term)
@@ -70,6 +74,50 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
       setError((err as Error).message);
     } finally {
       setUpdatingTicketId(null);
+    }
+  };
+
+  const resetCreateForm = () => {
+    setNewTitle("");
+    setNewDescription("");
+    setNewPriority("medium");
+  };
+
+  const handleCreateTicket = async () => {
+    if (!newTitle.trim() || !newDescription.trim()) {
+      setError("Title and description are required to create a ticket.");
+      return;
+    }
+
+    setError(null);
+    setSuccessMessage(null);
+    setIsCreating(true);
+
+    try {
+      const response = await fetch("/api/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTitle.trim(),
+          description: newDescription.trim(),
+          priority: newPriority, // "low" | "medium" | "high" -> matches VALID_PRIORITIES
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error((payload as { error?: string }).error ?? "Unable to create ticket");
+      }
+
+      const payload = (await response.json()) as { ticket: TicketResponse };
+      setTicketList((current) => [payload.ticket, ...current]);
+      setSuccessMessage("Ticket created successfully.");
+      resetCreateForm();
+    } catch (err) {
+      console.error(err);
+      setError((err as Error).message);
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -115,6 +163,74 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
         {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
       </header>
 
+      {/* Create Ticket Card */}
+      <div className="rounded-xl bg-white p-6 shadow border border-slate-200">
+        <h2 className="text-lg font-semibold text-slate-900 mb-3">Create Ticket</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <label className="text-sm font-medium text-slate-700" htmlFor="new-title">
+              Title
+            </label>
+            <input
+              id="new-title"
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              placeholder="Short summary of the issue"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="text-sm font-medium text-slate-700" htmlFor="new-description">
+              Description
+            </label>
+            <textarea
+              id="new-description"
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+              rows={3}
+              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              placeholder="Include relevant details, steps to reproduce, etc."
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-slate-700" htmlFor="new-priority">
+              Priority
+            </label>
+            <select
+              id="new-priority"
+              value={newPriority}
+              onChange={(e) =>
+                setNewPriority(e.target.value as TicketResponse["priority"])
+              }
+              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={resetCreateForm}
+            disabled={isCreating}
+            className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            onClick={handleCreateTicket}
+            disabled={isCreating}
+            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-brand-400"
+          >
+            {isCreating ? "Creating…" : "Create Ticket"}
+          </button>
+        </div>
+      </div>
+
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
@@ -146,7 +262,9 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
                       </td>
                       <td className="px-4 py-4">
                         <p className="font-medium text-slate-800">{ticket.createdBy.name}</p>
-                        <p className="text-xs text-slate-500">{ticket.createdBy.email ?? "N/A"}</p>
+                        <p className="text-xs text-slate-500">
+                          {ticket.createdBy.email ?? "N/A"}
+                        </p>
                       </td>
                       <td className="px-4 py-4">
                         <select
@@ -195,7 +313,8 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
                               : "bg-emerald-100 text-emerald-700"
                           }`}
                         >
-                          {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
+                          {ticket.priority.charAt(0).toUpperCase() +
+                            ticket.priority.slice(1)}
                         </span>
                       </td>
                       <td className="px-4 py-4 text-xs text-slate-500">

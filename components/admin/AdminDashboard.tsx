@@ -68,6 +68,50 @@ function formatDateInput(value: string | null) {
   return value.split("T")[0];
 }
 
+const createEmptyClient = (): AdminClient => ({
+  id: "",
+  code: "",
+  firstName: "",
+  lastName: "",
+  dob: null,
+  phone: null,
+  email: null,
+  addressLine1: null,
+  addressLine2: null,
+  city: null,
+  state: null,
+  zip: null,
+  emergencyName: null,
+  emergencyPhone: null,
+  primaryInsurance: null,
+  insuranceMemberId: null,
+  referralId: null,
+  referralSource: null,
+  assessmentDate: null,
+  riskLevel: null,
+  status: "active",
+  notes: null,
+  primaryCaregiver: null,
+});
+
+const createEmptyCaregiver = (): AdminCaregiver => ({
+  id: "",
+  employeeCode: null,
+  firstName: "",
+  lastName: "",
+  dob: null,
+  phone: null,
+  email: null,
+  addressLine1: null,
+  addressLine2: null,
+  city: null,
+  state: null,
+  zip: null,
+  sandataEvvId: null,
+  status: "active",
+  complianceSummary: "",
+});
+
 export default function AdminDashboard({ clients, caregivers, referrals }: Props) {
   const router = useRouter();
   const [editingClient, setEditingClient] = useState<AdminClient | null>(null);
@@ -101,37 +145,52 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
   const handleClientSave = async (data: AdminClient) => {
     setIsSaving(true);
     setError(null);
+    const isNew = !data.id;
+
     try {
-      const response = await fetch(`/api/admin/clients/${data.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: data.code,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          dob: data.dob,
-          phone: data.phone,
-          email: data.email,
-          addressLine1: data.addressLine1,
-          addressLine2: data.addressLine2,
-          city: data.city,
-          state: data.state,
-          zip: data.zip,
-          emergencyName: data.emergencyName,
-          emergencyPhone: data.emergencyPhone,
-          primaryInsurance: data.primaryInsurance,
-          insuranceMemberId: data.insuranceMemberId,
-          referralId: data.referralId,
-          assessmentDate: data.assessmentDate,
-          riskLevel: data.riskLevel,
-          status: data.status,
-          notes: data.notes,
-        }),
-      });
+      const response = await fetch(
+        isNew ? `/api/admin/clients` : `/api/admin/clients/${data.id}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: data.code,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            dob: data.dob,
+            phone: data.phone,
+            email: data.email,
+            addressLine1: data.addressLine1,
+            addressLine2: data.addressLine2,
+            city: data.city,
+            state: data.state,
+            zip: data.zip,
+            emergencyName: data.emergencyName,
+            emergencyPhone: data.emergencyPhone,
+            primaryInsurance: data.primaryInsurance,
+            insuranceMemberId: data.insuranceMemberId,
+            referralId: data.referralId,
+            assessmentDate: data.assessmentDate,
+            riskLevel: data.riskLevel,
+            status: data.status,
+            notes: data.notes,
+          }),
+        }
+      );
 
       if (!response.ok) {
-        const payload = await response.json();
-        throw new Error(payload.error ?? "Unable to save client");
+        let message = "Unable to save client";
+
+        try {
+          const payload = await response.json();
+          if (payload && typeof payload === "object" && "error" in payload) {
+            message = (payload as any).error ?? message;
+          }
+        } catch {
+          // ignore JSON parse failure and keep default message
+        }
+
+        throw new Error(message);
       }
 
       setEditingClient(null);
@@ -144,33 +203,49 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
     }
   };
 
+
   const handleCaregiverSave = async (data: AdminCaregiver) => {
     setIsSaving(true);
     setError(null);
+    const isNew = !data.id;
+
     try {
-      const response = await fetch(`/api/admin/caregivers/${data.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          employeeCode: data.employeeCode,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          dob: data.dob,
-          phone: data.phone,
-          email: data.email,
-          addressLine1: data.addressLine1,
-          addressLine2: data.addressLine2,
-          city: data.city,
-          state: data.state,
-          zip: data.zip,
-          sandataEvvId: data.sandataEvvId,
-          status: data.status,
-        }),
-      });
+      const response = await fetch(
+        isNew ? `/api/admin/caregivers` : `/api/admin/caregivers/${data.id}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            employeeCode: data.employeeCode,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            dob: data.dob,
+            phone: data.phone,
+            email: data.email,
+            addressLine1: data.addressLine1,
+            addressLine2: data.addressLine2,
+            city: data.city,
+            state: data.state,
+            zip: data.zip,
+            sandataEvvId: data.sandataEvvId,
+            status: data.status,
+          }),
+        }
+      );
 
       if (!response.ok) {
-        const payload = await response.json();
-        throw new Error(payload.error ?? "Unable to save caregiver");
+        let message = "Unable to save caregiver";
+
+        try {
+          const payload = await response.json();
+          if (payload && typeof payload === "object" && "error" in payload) {
+            message = (payload as any).error ?? message;
+          }
+        } catch {
+          // response body not JSON or empty – ignore and use default message
+        }
+
+        throw new Error(message);
       }
 
       setEditingCaregiver(null);
@@ -183,6 +258,7 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
     }
   };
 
+
   return (
     <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 p-6">
       <header className="flex flex-col gap-2">
@@ -191,11 +267,27 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
           Welcome back! Review client and caregiver records and keep information current.
         </p>
       </header>
+
       <section className="grid gap-6 lg:grid-cols-2">
+        {/* Clients */}
         <div className="rounded-xl bg-white shadow">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">Clients</h2>
-            <p className="text-sm text-slate-500">Click a client row to view and edit details.</p>
+          <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Clients</h2>
+              <p className="text-sm text-slate-500">
+                Click a client row to view and edit details.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingClient(createEmptyClient());
+                setError(null);
+              }}
+              className="rounded-md bg-brand-600 px-3 py-2 text-xs font-medium text-white hover:bg-brand-700"
+            >
+              + New Client
+            </button>
           </div>
           <div className="max-h-[480px] overflow-y-auto">
             <table className="min-w-full divide-y divide-slate-100">
@@ -232,17 +324,35 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-600">{client.riskLevel ?? "-"}</td>
-                    <td className="px-4 py-3 text-slate-600">{client.primaryCaregiver ?? "Unassigned"}</td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {client.primaryCaregiver ?? "Unassigned"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+
+        {/* Caregivers */}
         <div className="rounded-xl bg-white shadow">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">Caregivers</h2>
-            <p className="text-sm text-slate-500">Review staffing readiness and compliance status.</p>
+          <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Caregivers</h2>
+              <p className="text-sm text-slate-500">
+                Review staffing readiness and compliance status.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingCaregiver(createEmptyCaregiver());
+                setError(null);
+              }}
+              className="rounded-md bg-brand-600 px-3 py-2 text-xs font-medium text-white hover:bg-brand-700"
+            >
+              + New Caregiver
+            </button>
           </div>
           <div className="max-h-[480px] overflow-y-auto">
             <table className="min-w-full divide-y divide-slate-100">
@@ -269,7 +379,9 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
                     <td className="px-4 py-3 font-medium text-slate-900">
                       {caregiver.firstName} {caregiver.lastName}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{caregiver.employeeCode ?? "-"}</td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {caregiver.employeeCode ?? "-"}
+                    </td>
                     <td className="px-4 py-3 text-slate-600">
                       {caregiver.city}, {caregiver.state}
                     </td>
@@ -278,8 +390,12 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
                         {caregiver.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{caregiver.sandataEvvId ?? "-"}</td>
-                    <td className="px-4 py-3 text-slate-600">{caregiver.complianceSummary}</td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {caregiver.sandataEvvId ?? "-"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {caregiver.complianceSummary}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -326,6 +442,7 @@ type ClientModalProps = {
 
 function ClientEditModal({ client, referrals, onClose, onSave, isSaving }: ClientModalProps) {
   const [form, setForm] = useState<AdminClient>(client);
+  const isNew = !client.id;
 
   const updateField = <K extends keyof AdminClient>(key: K, value: AdminClient[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -335,7 +452,9 @@ function ClientEditModal({ client, referrals, onClose, onSave, isSaving }: Clien
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
       <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-slate-900">Edit Client</h3>
+          <h3 className="text-xl font-semibold text-slate-900">
+            {isNew ? "New Client" : "Edit Client"}
+          </h3>
           <button
             onClick={onClose}
             className="rounded-md px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
@@ -496,7 +615,9 @@ function ClientEditModal({ client, referrals, onClose, onSave, isSaving }: Clien
               type="date"
               className={inputClasses}
               value={formatDateInput(form.assessmentDate)}
-              onChange={(event) => updateField("assessmentDate", event.target.value || null)}
+              onChange={(event) =>
+                updateField("assessmentDate", event.target.value || null)
+              }
             />
           </div>
           <div>
@@ -537,7 +658,7 @@ function ClientEditModal({ client, referrals, onClose, onSave, isSaving }: Clien
               disabled={isSaving}
               className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-brand-400"
             >
-              {isSaving ? "Saving..." : "Save Changes"}
+              {isSaving ? "Saving..." : isNew ? "Create Client" : "Save Changes"}
             </button>
           </div>
         </form>
@@ -553,10 +674,19 @@ type CaregiverModalProps = {
   isSaving: boolean;
 };
 
-function CaregiverEditModal({ caregiver, onClose, onSave, isSaving }: CaregiverModalProps) {
+function CaregiverEditModal({
+  caregiver,
+  onClose,
+  onSave,
+  isSaving,
+}: CaregiverModalProps) {
   const [form, setForm] = useState<AdminCaregiver>(caregiver);
+  const isNew = !caregiver.id;
 
-  const updateField = <K extends keyof AdminCaregiver>(key: K, value: AdminCaregiver[K]) => {
+  const updateField = <K extends keyof AdminCaregiver>(
+    key: K,
+    value: AdminCaregiver[K]
+  ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -564,7 +694,9 @@ function CaregiverEditModal({ caregiver, onClose, onSave, isSaving }: CaregiverM
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-slate-900">Edit Caregiver</h3>
+          <h3 className="text-xl font-semibold text-slate-900">
+            {isNew ? "New Caregiver" : "Edit Caregiver"}
+          </h3>
           <button
             onClick={onClose}
             className="rounded-md px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
@@ -584,7 +716,9 @@ function CaregiverEditModal({ caregiver, onClose, onSave, isSaving }: CaregiverM
             <input
               className={inputClasses}
               value={form.employeeCode ?? ""}
-              onChange={(event) => updateField("employeeCode", event.target.value || null)}
+              onChange={(event) =>
+                updateField("employeeCode", event.target.value || null)
+              }
             />
           </div>
           <div>
@@ -636,7 +770,9 @@ function CaregiverEditModal({ caregiver, onClose, onSave, isSaving }: CaregiverM
             <input
               className={inputClasses}
               value={form.addressLine1 ?? ""}
-              onChange={(event) => updateField("addressLine1", event.target.value || null)}
+              onChange={(event) =>
+                updateField("addressLine1", event.target.value || null)
+              }
             />
           </div>
           <div className="md:col-span-2">
@@ -644,7 +780,9 @@ function CaregiverEditModal({ caregiver, onClose, onSave, isSaving }: CaregiverM
             <input
               className={inputClasses}
               value={form.addressLine2 ?? ""}
-              onChange={(event) => updateField("addressLine2", event.target.value || null)}
+              onChange={(event) =>
+                updateField("addressLine2", event.target.value || null)
+              }
             />
           </div>
           <div>
@@ -676,7 +814,9 @@ function CaregiverEditModal({ caregiver, onClose, onSave, isSaving }: CaregiverM
             <input
               className={inputClasses}
               value={form.sandataEvvId ?? ""}
-              onChange={(event) => updateField("sandataEvvId", event.target.value || null)}
+              onChange={(event) =>
+                updateField("sandataEvvId", event.target.value || null)
+              }
             />
           </div>
           <div className="md:col-span-2">
@@ -701,7 +841,7 @@ function CaregiverEditModal({ caregiver, onClose, onSave, isSaving }: CaregiverM
               disabled={isSaving}
               className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-brand-400"
             >
-              {isSaving ? "Saving..." : "Save Changes"}
+              {isSaving ? "Saving..." : isNew ? "Create Caregiver" : "Save Changes"}
             </button>
           </div>
         </form>

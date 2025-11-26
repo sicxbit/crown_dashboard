@@ -41,7 +41,9 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
   );
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
-  const [selectedCaregiverId, setSelectedCaregiverId] = useState<string | null>(null);
+  const [selectedCaregiverId, setSelectedCaregiverId] = useState<string | null>(
+    null
+  );
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [isPrimary, setIsPrimary] = useState(false);
@@ -159,14 +161,42 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
     }
   };
 
+  const handleMakePrimary = async (assignmentId: string) => {
+    if (!selectedClientId) return;
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await fetch(`/api/admin/assignments/${assignmentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPrimary: true }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json();
+        throw new Error(payload.error ?? "Unable to update primary assignment");
+      }
+
+      setSuccessMessage("Primary caregiver updated.");
+      await loadAssignments(selectedClientId);
+    } catch (err) {
+      console.error(err);
+      setError((err as Error).message);
+    }
+  };
+
   return (
     <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 p-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold text-slate-900">Caregiver Assignments</h1>
+        <h1 className="text-3xl font-semibold text-slate-900">
+          Caregiver Assignments
+        </h1>
         <p className="text-slate-600">
           Match clients with caregivers and keep assignment history accurate.
         </p>
       </header>
+
       <section className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <div className="rounded-xl bg-white shadow">
           <div className="border-b border-slate-100 px-6 py-4">
@@ -194,7 +224,9 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                   <div>
                     <p className="font-medium text-slate-900">
                       {client.name}
-                      <span className="ml-2 text-xs font-semibold text-brand-600">{client.code}</span>
+                      <span className="ml-2 text-xs font-semibold text-brand-600">
+                        {client.code}
+                      </span>
                     </p>
                     <p className="text-sm text-slate-500">
                       {client.city}, {client.state}
@@ -205,9 +237,12 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
             })}
           </div>
         </div>
+
         <div className="rounded-xl bg-white shadow">
           <div className="border-b border-slate-100 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">Active Caregivers</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Active Caregivers
+            </h2>
             <p className="text-sm text-slate-500">
               Select a caregiver to include them in the assignment form.
             </p>
@@ -226,11 +261,14 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                   <div>
                     <p className="font-medium text-slate-900">{caregiver.name}</p>
                     <p className="text-sm text-slate-500">
-                      {caregiver.city}, {caregiver.state} • {caregiver.phone ?? "No phone"}
+                      {caregiver.city}, {caregiver.state} •{" "}
+                      {caregiver.phone ?? "No phone"}
                     </p>
                   </div>
                   {isSelected && (
-                    <span className="text-xs font-semibold uppercase text-brand-600">Selected</span>
+                    <span className="text-xs font-semibold uppercase text-brand-600">
+                      Selected
+                    </span>
                   )}
                 </button>
               );
@@ -242,16 +280,23 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
       <section className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <div className="rounded-xl bg-white shadow">
           <div className="border-b border-slate-100 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">Assignment History</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Assignment History
+            </h2>
             <p className="text-sm text-slate-500">
-              Active assignments appear at the top. End assignments when coverage changes.
+              Active assignments appear at the top. End assignments when coverage
+              changes.
             </p>
           </div>
           <div className="max-h-[400px] overflow-y-auto">
             {loadingAssignments ? (
-              <div className="px-6 py-8 text-sm text-slate-500">Loading assignments…</div>
+              <div className="px-6 py-8 text-sm text-slate-500">
+                Loading assignments…
+              </div>
             ) : assignments.length === 0 ? (
-              <div className="px-6 py-8 text-sm text-slate-500">No assignments yet.</div>
+              <div className="px-6 py-8 text-sm text-slate-500">
+                No assignments yet.
+              </div>
             ) : (
               <table className="min-w-full divide-y divide-slate-100">
                 <thead className="bg-slate-50 text-left text-sm font-semibold text-slate-600">
@@ -268,7 +313,10 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                   {assignments.map((assignment) => {
                     const isActive = !assignment.endDate;
                     return (
-                      <tr key={assignment.id} className={isActive ? "bg-brand-50/30" : "bg-white"}>
+                      <tr
+                        key={assignment.id}
+                        className={isActive ? "bg-brand-50/30" : "bg-white"}
+                      >
                         <td className="px-4 py-3 font-medium text-slate-900">
                           {assignment.caregiverName}
                         </td>
@@ -289,15 +337,27 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                             "-"
                           )}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">{assignment.notes ?? ""}</td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-slate-600">
+                          {assignment.notes ?? ""}
+                        </td>
+                        <td className="px-4 py-3 space-x-2 text-right">
                           {isActive && (
-                            <button
-                              onClick={() => handleEndAssignment(assignment.id)}
-                              className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100"
-                            >
-                              End Today
-                            </button>
+                            <>
+                              {!assignment.isPrimary && (
+                                <button
+                                  onClick={() => handleMakePrimary(assignment.id)}
+                                  className="rounded-md border border-emerald-300 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50"
+                                >
+                                  Make Primary
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleEndAssignment(assignment.id)}
+                                className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100"
+                              >
+                                End Today
+                              </button>
+                            </>
                           )}
                         </td>
                       </tr>
@@ -308,16 +368,21 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
             )}
           </div>
         </div>
+
         <div className="rounded-xl bg-white shadow">
           <div className="border-b border-slate-100 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">Create Assignment</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Create Assignment
+            </h2>
             <p className="text-sm text-slate-500">
               Choose a caregiver from the list and define the coverage details.
             </p>
           </div>
           <form className="space-y-4 px-6 py-6" onSubmit={handleCreateAssignment}>
             <div>
-              <label className="text-sm font-medium text-slate-700">Selected Caregiver</label>
+              <label className="text-sm font-medium text-slate-700">
+                Selected Caregiver
+              </label>
               <div className="rounded-md border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600">
                 {selectedCaregiverId
                   ? activeCaregivers.find((c) => c.id === selectedCaregiverId)?.name
@@ -325,7 +390,10 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700" htmlFor="startDate">
+              <label
+                className="text-sm font-medium text-slate-700"
+                htmlFor="startDate"
+              >
                 Start Date
               </label>
               <input
@@ -338,7 +406,10 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700" htmlFor="endDate">
+              <label
+                className="text-sm font-medium text-slate-700"
+                htmlFor="endDate"
+              >
                 End Date (optional)
               </label>
               <input
@@ -361,7 +432,10 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
               </label>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700" htmlFor="notes">
+              <label
+                className="text-sm font-medium text-slate-700"
+                htmlFor="notes"
+              >
                 Notes
               </label>
               <textarea
@@ -373,7 +447,9 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
               />
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
-            {successMessage && <p className="text-sm text-emerald-600">{successMessage}</p>}
+            {successMessage && (
+              <p className="text-sm text-emerald-600">{successMessage}</p>
+            )}
             <button
               type="submit"
               className="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-brand-400"

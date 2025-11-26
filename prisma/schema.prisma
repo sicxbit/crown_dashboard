@@ -23,17 +23,6 @@ model User {
   @@map("users")
 }
 
-enum TicketStatus {
-  open
-  in_progress
-  resolved
-}
-
-enum TicketPriority {
-  low
-  medium
-  high
-}
 
 model Referral {
   id           String   @id @default(uuid())
@@ -217,15 +206,15 @@ model TrainingRecord {
 }
 
 model Ticket {
-  id              String         @id @default(uuid())
+  id              String   @id @default(uuid())
   title           String
   description     String
-  status          TicketStatus   @default(open)
-  priority        TicketPriority @default(medium)
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
-  createdByUserId String         @map("created_by_user_id")
-  assigneeUserId  String?        @map("assignee_user_id")
+  status          String   @default("open")   @map("status")
+  priority        String   @default("medium") @map("priority")
+  createdAt       DateTime @default(now())    @map("created_at")
+  updatedAt       DateTime @updatedAt         @map("updated_at")
+  createdByUserId String   @map("created_by_user_id")
+  assigneeUserId  String?  @map("assignee_user_id")
 
   createdBy User  @relation("TicketCreator", fields: [createdByUserId], references: [id])
   assignee  User? @relation("TicketAssignee", fields: [assigneeUserId], references: [id])
