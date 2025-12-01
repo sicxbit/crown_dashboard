@@ -3,19 +3,22 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-type Theme = "light" | "dark";
+export type ThemePreference = "light" | "dark" | "system";
+
+type ResolvedTheme = "light" | "dark";
 
 type PreferencesContextValue = {
-  theme: Theme;
+  theme: ThemePreference;
+  resolvedTheme: ResolvedTheme;
   displayName: string;
-  setTheme: (theme: Theme) => void;
+  setTheme: (theme: ThemePreference) => void;
   setDisplayName: (name: string) => void;
 };
 
 const STORAGE_KEY = "crown-dashboard-preferences";
 
 const defaultPreferences = (initialDisplayName: string) => ({
-  theme: "light" as Theme,
+  theme: "system" as ThemePreference,
   displayName: initialDisplayName,
 });
 
@@ -31,10 +34,15 @@ function readPreferences(initialDisplayName: string) {
     }
 
     const parsed = JSON.parse(stored) as Partial<PreferencesContextValue>;
+    const theme =
+      parsed.theme === "dark" || parsed.theme === "light" || parsed.theme === "system"
+        ? parsed.theme
+        : "system";
+
     return {
-      theme: parsed.theme === "dark" ? "dark" : "light",
+      theme,
       displayName: parsed.displayName?.trim() || initialDisplayName,
-    } satisfies { theme: Theme; displayName: string };
+    } satisfies { theme: ThemePreference; displayName: string };
   } catch (error) {
     console.warn("Unable to read saved preferences", error);
     return defaultPreferences(initialDisplayName);
@@ -49,7 +57,8 @@ type ProviderProps = {
 };
 
 export function PreferencesProvider({ children, initialDisplayName = "Active User" }: ProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(() => readPreferences(initialDisplayName).theme);
+  const [theme, setThemeState] = useState<ThemePreference>(() => readPreferences(initialDisplayName).theme);
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
   const [displayName, setDisplayNameState] = useState<string>(
     () => readPreferences(initialDisplayName).displayName
   );
@@ -61,27 +70,51 @@ export function PreferencesProvider({ children, initialDisplayName = "Active Use
   }, [initialDisplayName]);
 
   useEffect(() => {
-    if (typeof document !== "undefined") {
-      document.documentElement.classList.toggle("dark", theme === "dark");
-    }
+    const getSystemTheme = () => {
+      if (typeof window === "undefined") return "light" as ResolvedTheme;
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    };
 
+    const applyTheme = () => {
+      const nextTheme = theme === "system" ? getSystemTheme() : theme;
+      setResolvedTheme(nextTheme);
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.toggle("dark", nextTheme === "dark");
+      }
+    };
+
+    applyTheme();
+
+    const mediaQuery = typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+    const handleChange = () => {
+      if (theme === "system") {
+        applyTheme();
+      }
+    };
+
+    mediaQuery?.addEventListener("change", handleChange);
+    return () => mediaQuery?.removeEventListener("change", handleChange);
+  }, [theme]);
+
+  useEffect(() => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ theme, displayName }));
     }
   }, [theme, displayName]);
 
-  const setTheme = (value: Theme) => setThemeState(value);
+  const setTheme = (value: ThemePreference) => setThemeState(value);
   const setDisplayName = (value: string) =>
     setDisplayNameState(value.trim() || defaultPreferences(initialDisplayName).displayName);
 
   const value = useMemo(
     () => ({
       theme,
+      resolvedTheme,
       displayName,
       setTheme,
       setDisplayName,
     }),
-    [theme, displayName]
+    [theme, resolvedTheme, displayName]
   );
 
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;

@@ -67,22 +67,22 @@ export default function TicketPortal({ currentUserName, initialTickets }: Props)
   };
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-8 p-6">
-      <header className="rounded-xl bg-white p-6 shadow">
-        <h1 className="text-3xl font-semibold text-slate-900">Need a hand?</h1>
-        <p className="mt-2 text-slate-600">
+    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-8 bg-transparent p-6 text-slate-900 transition-colors dark:text-slate-100">
+      <header className="rounded-xl border border-slate-200 bg-white p-6 shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
+        <h1 className="text-3xl font-semibold">Need a hand?</h1>
+        <p className="mt-2 text-slate-600 dark:text-slate-300">
           Hi {currentUserName}! Create a ticket for the operations team and we’ll route it to the best teammate to help.
         </p>
       </header>
 
-      <section className="rounded-xl bg-white p-6 shadow">
-        <h2 className="text-xl font-semibold text-slate-900">Create a ticket</h2>
-        <p className="mt-1 text-sm text-slate-600">
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="text-xl font-semibold">Create a ticket</h2>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           Share a clear title and description so we can triage your request quickly.
         </p>
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
-            <label className="text-sm font-medium text-slate-700" htmlFor="ticket-title">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-200" htmlFor="ticket-title">
               Title
             </label>
             <input
@@ -92,11 +92,11 @@ export default function TicketPortal({ currentUserName, initialTickets }: Props)
               required
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700" htmlFor="ticket-description">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-200" htmlFor="ticket-description">
               Description
             </label>
             <textarea
@@ -106,18 +106,18 @@ export default function TicketPortal({ currentUserName, initialTickets }: Props)
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               rows={5}
-              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700" htmlFor="ticket-priority">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-200" htmlFor="ticket-priority">
               Priority
             </label>
             <select
               id="ticket-priority"
               value={priority}
               onChange={(event) => setPriority(event.target.value as TicketPriority)}
-              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             >
               {PRIORITY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -126,51 +126,51 @@ export default function TicketPortal({ currentUserName, initialTickets }: Props)
               ))}
             </select>
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
+          {successMessage && <p className="text-sm text-green-600 dark:text-green-300">{successMessage}</p>}
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-brand-400"
+            className="inline-flex items-center justify-center rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:bg-brand-400"
           >
             {isSubmitting ? "Submitting..." : "Submit Ticket"}
           </button>
         </form>
       </section>
 
-      <section className="mb-8 rounded-xl bg-white p-6 shadow">
-        <h2 className="text-xl font-semibold text-slate-900">My tickets</h2>
-        <p className="mt-1 text-sm text-slate-600">
+      <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="text-xl font-semibold">My tickets</h2>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           Track progress on your requests and see who is assigned.
         </p>
         <div className="mt-5 grid gap-4">
           {tickets.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+            <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
               You have not submitted any tickets yet.
             </div>
           ) : (
             tickets.map((ticket) => (
-              <article key={ticket.id} className="rounded-lg border border-slate-200 p-4 shadow-sm">
+              <article key={ticket.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <h3 className="text-lg font-semibold text-slate-900">{ticket.title}</h3>
+                  <h3 className="text-lg font-semibold">{ticket.title}</h3>
                   <span
                     className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                       ticket.status === "resolved"
-                        ? "bg-emerald-100 text-emerald-700"
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200"
                         : ticket.status === "in_progress"
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-slate-200 text-slate-700"
+                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-200"
+                        : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
                     }`}
                   >
                     {ticket.status.replace(/_/g, " ")}
                   </span>
                 </div>
-                <p className="mt-2 text-sm text-slate-600">{ticket.description}</p>
-                <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500">
-                  <span className="rounded-md bg-slate-100 px-2 py-1 font-medium">
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{ticket.description}</p>
+                <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-300">
+                  <span className="rounded-md bg-slate-100 px-2 py-1 font-medium dark:bg-slate-800 dark:text-slate-200">
                     Priority: {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
                   </span>
-                  <span className="rounded-md bg-slate-100 px-2 py-1 font-medium">
+                  <span className="rounded-md bg-slate-100 px-2 py-1 font-medium dark:bg-slate-800 dark:text-slate-200">
                     Assigned to: {ticket.assignee?.name ?? "Not assigned"}
                   </span>
                   <span>Created {new Date(ticket.createdAt).toLocaleString()}</span>
