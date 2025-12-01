@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { TicketResponse, TicketStatus } from "@/lib/tickets";
-import type { TicketAssignmentMember } from "@/lib/ticketAssignment";
+import { ASSIGNEE_DIRECTORY } from "@/lib/ticketAssignees";
 
 const STATUS_OPTIONS: Array<{ value: TicketStatus; label: string }> = [
   { value: "open", label: "Open" },
@@ -12,23 +12,22 @@ const STATUS_OPTIONS: Array<{ value: TicketStatus; label: string }> = [
 
 type Props = {
   tickets: TicketResponse[];
-  teamMembers: TicketAssignmentMember[];
 };
 
 type FilterStatus = TicketStatus | "all";
+type FilterAssignee = keyof typeof ASSIGNEE_DIRECTORY | "all";
 
-type TicketUpdatePayload = Partial<Pick<TicketResponse, "status" | "priority">> & {
-  assigneeUserId?: string | null;
-};
+type TicketUpdatePayload = Partial<Pick<TicketResponse, "status" | "priority">>;
 
 const inputClasses =
   "rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
 
 const labelClasses = "text-sm font-medium text-slate-700 dark:text-slate-200";
 
-export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
+export default function AdminTicketsTable({ tickets }: Props) {
   const [ticketList, setTicketList] = useState<TicketResponse[]>(tickets);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const [filterAssignee, setFilterAssignee] = useState<FilterAssignee>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingTicketId, setUpdatingTicketId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,13 +45,16 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
       if (filterStatus !== "all" && ticket.status !== filterStatus) {
         return false;
       }
+      if (filterAssignee !== "all" && ticket.assignedTo !== filterAssignee) {
+        return false;
+      }
       if (!term) return true;
       return (
         ticket.title.toLowerCase().includes(term) ||
         ticket.description.toLowerCase().includes(term)
       );
     });
-  }, [filterStatus, searchTerm, ticketList]);
+  }, [filterAssignee, filterStatus, searchTerm, ticketList]);
 
   const handleTicketUpdate = async (id: string, updates: TicketUpdatePayload) => {
     setError(null);
@@ -136,7 +138,7 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
           </p>
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <label className={labelClasses} htmlFor="ticket-status-filter">
               Status
             </label>
@@ -150,6 +152,22 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
               {STATUS_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
+                </option>
+              ))}
+            </select>
+            <label className={labelClasses} htmlFor="ticket-assignee-filter">
+              Assignee
+            </label>
+            <select
+              id="ticket-assignee-filter"
+              value={filterAssignee}
+              onChange={(event) => setFilterAssignee(event.target.value as FilterAssignee)}
+              className={inputClasses}
+            >
+              <option value="all">All</option>
+              {Object.entries(ASSIGNEE_DIRECTORY).map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
                 </option>
               ))}
             </select>
@@ -243,6 +261,7 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
               <tr>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Ticket</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Created By</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Category</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Assignee</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Status</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Priority</th>
@@ -252,7 +271,7 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {filteredTickets.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
                     No tickets found.
                   </td>
                 </tr>
@@ -264,6 +283,9 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
                       <td className="px-4 py-4">
                         <p className="font-medium text-slate-900">{ticket.title}</p>
                         <p className="mt-1 text-xs text-slate-500">{ticket.description}</p>
+                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
+                          <span className="font-semibold">Routing reason:</span> {ticket.assignedReason}
+                        </p>
                       </td>
                       <td className="px-4 py-4">
                         <p className="font-medium text-slate-800">{ticket.createdBy.name}</p>
@@ -272,23 +294,17 @@ export default function AdminTicketsTable({ tickets, teamMembers }: Props) {
                         </p>
                       </td>
                       <td className="px-4 py-4">
-                        <select
-                          value={ticket.assignee?.id ?? ""}
-                          onChange={(event) =>
-                            handleTicketUpdate(ticket.id, {
-                              assigneeUserId: event.target.value ? event.target.value : null,
-                            })
-                          }
-                          disabled={isUpdating}
-                          className="w-full rounded-md border border-slate-200 px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
-                        >
-                          <option value="">Unassigned</option>
-                          {teamMembers.map((member) => (
-                            <option key={member.id} value={member.id}>
-                              {member.name}
-                            </option>
-                          ))}
-                        </select>
+                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium uppercase text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                          {ticket.category}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col gap-1">
+                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            {ticket.assignedToName}
+                          </p>
+                          <p className="text-xs text-slate-500">Assigned to: {ticket.assignedTo}</p>
+                        </div>
                       </td>
                       <td className="px-4 py-4">
                         <select

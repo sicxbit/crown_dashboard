@@ -9,7 +9,6 @@ const VALID_PRIORITIES: TicketPriority[] = ["low", "medium", "high"];
 
 type PatchPayload = {
   status?: unknown;
-  assigneeUserId?: unknown;
   priority?: unknown;
 };
 
@@ -26,7 +25,6 @@ export async function GET(
     where: { id: params.id },
     include: {
       createdBy: { include: { caregiver: true } },
-      assignee: { include: { caregiver: true } },
     },
   });
 
@@ -57,7 +55,6 @@ export async function PATCH(
 
   const data: {
     status?: TicketStatus;
-    assigneeUserId?: string | null;
     priority?: TicketPriority;
   } = {};
 
@@ -75,20 +72,6 @@ export async function PATCH(
     data.priority = payload.priority as TicketPriority;
   }
 
-  if (payload.assigneeUserId !== undefined) {
-    if (payload.assigneeUserId === null) {
-      data.assigneeUserId = null;
-    } else if (typeof payload.assigneeUserId === "string") {
-      const targetUser = await prisma.user.findUnique({ where: { id: payload.assigneeUserId } });
-      if (!targetUser) {
-        return NextResponse.json({ error: "Assignee not found" }, { status: 404 });
-      }
-      data.assigneeUserId = targetUser.id;
-    } else {
-      return NextResponse.json({ error: "Invalid assignee" }, { status: 422 });
-    }
-  }
-
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "No updates supplied" }, { status: 400 });
   }
@@ -99,7 +82,6 @@ export async function PATCH(
       data,
       include: {
         createdBy: { include: { caregiver: true } },
-        assignee: { include: { caregiver: true } },
       },
     });
 

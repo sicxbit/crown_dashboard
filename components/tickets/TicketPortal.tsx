@@ -24,6 +24,7 @@ export default function TicketPortal({ currentUserName, initialTickets }: Props)
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TicketPriority>("medium");
+  const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -52,11 +53,11 @@ export default function TicketPortal({ currentUserName, initialTickets }: Props)
       setDescription("");
       setPriority("medium");
 
-      const assigneeName = payload.ticket.assignee?.name ?? "Operations";
+      const assigneeName = payload.ticket.assignedToName;
       setSuccessMessage(
         payload.source === "ai"
-          ? `Ticket created. AI suggested ${assigneeName} for follow-up.`
-          : `Ticket created and routed to ${assigneeName}.`
+          ? `Ticket created and routed to ${assigneeName}.`
+          : `Ticket created and routed via fallback to ${assigneeName}.`
       );
     } catch (err) {
       console.error(err);
@@ -143,43 +144,71 @@ export default function TicketPortal({ currentUserName, initialTickets }: Props)
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           Track progress on your requests and see who is assigned.
         </p>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-200" htmlFor="ticket-assignee-filter">
+            Filter by assignee
+          </label>
+          <select
+            id="ticket-assignee-filter"
+            value={assigneeFilter}
+            onChange={(event) => setAssigneeFilter(event.target.value)}
+            className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:w-64"
+          >
+            <option value="all">All</option>
+            <option value="jemond">Jemond (CEO)</option>
+            <option value="natasha">Natasha (HR Head)</option>
+            <option value="jithu">Jithu (Tech Head)</option>
+            <option value="janice">Janice (Onboarding & Accounts)</option>
+          </select>
+        </div>
         <div className="mt-5 grid gap-4">
-          {tickets.length === 0 ? (
+          {tickets.filter((ticket) => assigneeFilter === "all" || ticket.assignedTo === assigneeFilter).length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
               You have not submitted any tickets yet.
             </div>
           ) : (
-            tickets.map((ticket) => (
-              <article key={ticket.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <h3 className="text-lg font-semibold">{ticket.title}</h3>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                      ticket.status === "resolved"
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200"
-                        : ticket.status === "in_progress"
-                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-200"
-                        : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                    }`}
+              tickets
+                .filter((ticket) => assigneeFilter === "all" || ticket.assignedTo === assigneeFilter)
+                .map((ticket) => (
+                  <article
+                    key={ticket.id}
+                    className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900"
                   >
-                    {ticket.status.replace(/_/g, " ")}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{ticket.description}</p>
-                <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-300">
-                  <span className="rounded-md bg-slate-100 px-2 py-1 font-medium dark:bg-slate-800 dark:text-slate-200">
-                    Priority: {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
-                  </span>
-                  <span className="rounded-md bg-slate-100 px-2 py-1 font-medium dark:bg-slate-800 dark:text-slate-200">
-                    Assigned to: {ticket.assignee?.name ?? "Not assigned"}
-                  </span>
-                  <span>Created {new Date(ticket.createdAt).toLocaleString()}</span>
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-      </section>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <h3 className="text-lg font-semibold">{ticket.title}</h3>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                          ticket.status === "resolved"
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200"
+                            : ticket.status === "in_progress"
+                            ? "bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-200"
+                            : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                        }`}
+                      >
+                        {ticket.status.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{ticket.description}</p>
+                    <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-300">
+                      <span className="rounded-md bg-slate-100 px-2 py-1 font-medium dark:bg-slate-800 dark:text-slate-200">
+                        Priority: {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
+                      </span>
+                      <span className="rounded-md bg-slate-100 px-2 py-1 font-medium dark:bg-slate-800 dark:text-slate-200">
+                        Assigned to: {ticket.assignedToName}
+                      </span>
+                      <span className="rounded-md bg-slate-100 px-2 py-1 font-medium dark:bg-slate-800 dark:text-slate-200">
+                        Category: {ticket.category}
+                      </span>
+                      <span className="rounded-md bg-slate-100 px-2 py-1 font-medium dark:bg-slate-800 dark:text-slate-200">
+                        Reason: {ticket.assignedReason}
+                      </span>
+                      <span>Created {new Date(ticket.createdAt).toLocaleString()}</span>
+                    </div>
+                  </article>
+                ))
+            )}
+          </div>
+        </section>
     </main>
   );
 }

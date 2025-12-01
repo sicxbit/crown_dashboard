@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { serializeTickets } from "@/lib/tickets";
-import { getTicketAssignmentMembers } from "@/lib/ticketAssignment";
 import AdminShell from "@/components/admin/AdminShell";
 import AdminTicketsTable from "@/components/admin/AdminTicketsTable";
 
@@ -12,20 +11,16 @@ export default async function AdminTicketsPage() {
     redirect("/admin/login");
   }
 
-  const [tickets, teamMembers] = await Promise.all([
-    prisma.ticket.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        createdBy: { include: { caregiver: true } },
-        assignee: { include: { caregiver: true } },
-      },
-    }),
-    getTicketAssignmentMembers(),
-  ]);
+  const tickets = await prisma.ticket.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      createdBy: { include: { caregiver: true } },
+    },
+  });
 
   return (
     <AdminShell user={user} active="tickets">
-      <AdminTicketsTable tickets={serializeTickets(tickets)} teamMembers={teamMembers} />
+      <AdminTicketsTable tickets={serializeTickets(tickets)} />
     </AdminShell>
   );
 }

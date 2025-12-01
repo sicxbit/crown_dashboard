@@ -19,7 +19,6 @@ export default async function TicketPage() {
     orderBy: { createdAt: "desc" },
     include: {
       createdBy: { include: { caregiver: true } },
-      assignee: { include: { caregiver: true } },
     },
   });
 
