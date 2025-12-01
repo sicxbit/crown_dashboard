@@ -1,4 +1,5 @@
 import type { Caregiver, Ticket, User } from "@prisma/client";
+import { formatAssigneeName } from "./ticketAssignees";
 
 export type TicketStatus = "open" | "in_progress" | "resolved";
 export type TicketPriority = "low" | "medium" | "high";
@@ -16,15 +17,17 @@ export type TicketResponse = {
   description: string;
   status: TicketStatus;
   priority: TicketPriority;
+  assignedTo: string;
+  assignedToName: string;
+  assignedReason: string;
+  category: string;
   createdAt: string;
   updatedAt: string;
   createdBy: TicketUserInfo;
-  assignee: TicketUserInfo | null;
 };
 
 type TicketWithRelations = Ticket & {
   createdBy: User & { caregiver?: Caregiver | null };
-  assignee: (User & { caregiver?: Caregiver | null }) | null;
 };
 
 function formatUser(user: User & { caregiver?: Caregiver | null }): TicketUserInfo {
@@ -46,10 +49,13 @@ export function serializeTicket(ticket: TicketWithRelations): TicketResponse {
     description: ticket.description,
     status: ticket.status as TicketStatus,
     priority: ticket.priority as TicketPriority,
+    assignedTo: ticket.assignedTo,
+    assignedToName: formatAssigneeName(ticket.assignedTo),
+    assignedReason: ticket.assignedReason,
+    category: ticket.category,
     createdAt: ticket.createdAt.toISOString(),
     updatedAt: ticket.updatedAt.toISOString(),
     createdBy: formatUser(ticket.createdBy),
-    assignee: ticket.assignee ? formatUser(ticket.assignee) : null,
   };
 }
 

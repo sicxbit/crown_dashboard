@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { getSuggestedTicketAssignee } from "@/lib/aiTicketAssignment";
-import { findTeamMemberById } from "@/lib/ticketAssignment";
+import { formatAssigneeName, routeTicket } from "@/lib/ticketRouting";
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -25,12 +24,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Title and description are required" }, { status: 422 });
   }
 
-  const suggestion = await getSuggestedTicketAssignee(title, description);
-  const member = findTeamMemberById(suggestion.members, suggestion.assigneeId) ?? null;
+  const routing = await routeTicket(title, description);
 
   return NextResponse.json({
-    assigneeId: member?.id ?? null,
-    member,
-    source: suggestion.source,
+    assigneeId: routing.assignee,
+    assigneeName: formatAssigneeName(routing.assignee),
+    category: routing.category,
+    reason: routing.reason,
+    source: routing.source,
   });
 }

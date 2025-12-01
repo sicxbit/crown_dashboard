@@ -18,7 +18,6 @@ model User {
 
   caregiver    Caregiver? @relation("CaregiverUser", fields: [caregiverId], references: [id])
   createdTickets Ticket[]  @relation("TicketCreator")
-  assignedTickets Ticket[] @relation("TicketAssignee")
 
   @@map("users")
 }
@@ -211,16 +210,16 @@ model Ticket {
   description     String
   status          String   @default("open")   @map("status")
   priority        String   @default("medium") @map("priority")
+  assignedTo      String   @default("unassigned") @map("assigned_to")
+  assignedReason  String   @default("Pending assignment") @map("assigned_reason")
+  category        String   @default("General") @map("category")
   createdAt       DateTime @default(now())    @map("created_at")
   updatedAt       DateTime @updatedAt         @map("updated_at")
   createdByUserId String   @map("created_by_user_id")
-  assigneeUserId  String?  @map("assignee_user_id")
 
   createdBy User  @relation("TicketCreator", fields: [createdByUserId], references: [id])
-  assignee  User? @relation("TicketAssignee", fields: [assigneeUserId], references: [id])
 
   @@index([createdByUserId], map: "idx_tickets_created_by")
-  @@index([assigneeUserId], map: "idx_tickets_assignee")
   @@map("tickets")
 }
 

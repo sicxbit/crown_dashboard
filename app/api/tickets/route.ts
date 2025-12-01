@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { getSuggestedTicketAssignee } from "@/lib/aiTicketAssignment";
 import { serializeTicket, serializeTickets, TicketPriority } from "@/lib/tickets";
-import { findTeamMemberById, getFallbackAssignee } from "@/lib/ticketAssignment";
+import { routeTicket } from "@/lib/ticketRouting";
 
 const VALID_PRIORITIES: TicketPriority[] = ["low", "medium", "high"];
 
@@ -19,9 +18,6 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     include: {
       createdBy: {
-        include: { caregiver: true },
-      },
-      assignee: {
         include: { caregiver: true },
       },
     },
@@ -58,10 +54,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid priority" }, { status: 422 });
   }
 
-  const suggestion = await getSuggestedTicketAssignee(title, description);
-  const suggestedMember = findTeamMemberById(suggestion.members, suggestion.assigneeId);
-  const fallbackMember = getFallbackAssignee(suggestion.members);
-  const assigneeUserId = suggestedMember?.id ?? fallbackMember?.id ?? null;
+  const routing = await routeTicket(title, description);
 
   const ticket = await prisma.ticket.create({
     data: {
@@ -69,13 +62,14 @@ export async function POST(request: Request) {
       description,
       priority: priorityValue as TicketPriority,
       createdByUserId: user.id,
-      assigneeUserId,
+      assignedTo: routing.assignee,
+      assignedReason: routing.reason,
+      category: routing.category,
     },
     include: {
       createdBy: { include: { caregiver: true } },
-      assignee: { include: { caregiver: true } },
     },
   });
 
-  return NextResponse.json({ ticket: serializeTicket(ticket), source: suggestion.source }, { status: 201 });
+  return NextResponse.json({ ticket: serializeTicket(ticket), source: routing.source }, { status: 201 });
 }
