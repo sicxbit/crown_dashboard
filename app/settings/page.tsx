@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePreferences } from "@/components/common/PreferencesProvider";
 
 const themeOptions = [
+  { value: "system", label: "System (match OS)" },
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
 ] as const;

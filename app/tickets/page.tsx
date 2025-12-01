@@ -7,7 +7,11 @@ import TicketPortal from "@/components/tickets/TicketPortal";
 export default async function TicketPage() {
   const user = await getCurrentUser();
   if (!user) {
-    redirect("/");
+    redirect("/caregiver/login");
+  }
+
+  if (user.role === "admin") {
+    redirect("/admin/tickets");
   }
 
   const tickets = await prisma.ticket.findMany({

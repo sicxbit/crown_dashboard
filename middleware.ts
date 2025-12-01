@@ -11,8 +11,9 @@ export async function middleware(req: NextRequest) {
 
   const isAdminRoute = pathname.startsWith("/admin");
   const isCaregiverRoute = pathname.startsWith("/caregiver");
+  const isTicketRoute = pathname.startsWith("/tickets");
 
-  if (!isAdminRoute && !isCaregiverRoute) {
+  if (!isAdminRoute && !isCaregiverRoute && !isTicketRoute) {
     return NextResponse.next();
   }
 
@@ -46,6 +47,10 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL("/admin", req.url));
     }
 
+    if (isTicketRoute && payload.role === "admin") {
+      return NextResponse.redirect(new URL("/admin/tickets", req.url));
+    }
+
     return NextResponse.next();
   } catch (error) {
     console.error("middleware auth error", error);
@@ -54,5 +59,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/caregiver/:path*"],
+  matcher: ["/admin/:path*", "/caregiver/:path*", "/tickets/:path*"],
 };
