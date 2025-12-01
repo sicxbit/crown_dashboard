@@ -49,7 +49,7 @@ async function callOpenAi(prompt: string) {
 
   const client = await createOpenAiClient();
   const payload = {
-    model: "gpt-5.1-mini",
+    model: "gpt-4o-mini",
     input: [
       { role: "system", content: ROUTING_SYSTEM_PROMPT },
       { role: "user", content: prompt },
