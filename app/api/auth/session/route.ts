@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import { firebaseAdminAuth } from "@/lib/firebaseAdmin";
 import prisma from "@/lib/prisma";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const FIVE_DAYS_IN_MS = 1000 * 60 * 60 * 24 * 5;
 
 export async function POST(request: Request) {
@@ -76,7 +79,9 @@ export async function POST(request: Request) {
       expiresIn: FIVE_DAYS_IN_MS,
     });
 
-    cookies().set({
+    const cookieStore = await cookies();
+
+    cookieStore.set({
       name: "session",
       value: sessionCookie,
       httpOnly: true,
@@ -95,7 +100,8 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   try {
-    cookies().delete("session");
+    const cookieStore = await cookies();
+    cookieStore.delete("session");
     return NextResponse.json({ status: "signed_out" });
   } catch (error) {
     console.error("Failed to clear session cookie", error);
