@@ -1,15 +1,7 @@
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import AssignmentManager from "@/components/admin/AssignmentManager";
-import AdminShell from "@/components/admin/AdminShell";
 
 export default async function AssignmentsPage() {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
-    redirect("/admin/login");
-  }
-
   const [clients, caregivers] = await Promise.all([
     prisma.client.findMany({
       orderBy: { lastName: "asc" },
@@ -38,23 +30,21 @@ export default async function AssignmentsPage() {
   ]);
 
   return (
-    <AdminShell user={user} active="assignments">
-      <AssignmentManager
-        clients={clients.map((client) => ({
-          id: client.id,
-          code: client.code,
-          name: `${client.firstName} ${client.lastName}`,
-          city: client.city,
-          state: client.state,
-        }))}
-        caregivers={caregivers.map((caregiver) => ({
-          id: caregiver.id,
-          name: `${caregiver.firstName} ${caregiver.lastName}`,
-          phone: caregiver.phone,
-          city: caregiver.city,
-          state: caregiver.state,
-        }))}
-      />
-    </AdminShell>
+    <AssignmentManager
+      clients={clients.map((client) => ({
+        id: client.id,
+        code: client.code,
+        name: `${client.firstName} ${client.lastName}`,
+        city: client.city,
+        state: client.state,
+      }))}
+      caregivers={caregivers.map((caregiver) => ({
+        id: caregiver.id,
+        name: `${caregiver.firstName} ${caregiver.lastName}`,
+        phone: caregiver.phone,
+        city: caregiver.city,
+        state: caregiver.state,
+      }))}
+    />
   );
 }
