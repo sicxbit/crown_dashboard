@@ -1,3 +1,5 @@
+import OpenAI from "openai";
+
 export type RouteTicketResult = {
   assignee: "jemond" | "natasha" | "jithu" | "janice";
   category: "HR" | "Tech" | "Exec" | "Onboarding";
@@ -21,20 +23,13 @@ Return ONLY valid JSON:
   "reason": "<1–2 sentence explanation>"
 }`;
 
-async function createOpenAiClient() {
+function createOpenAiClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
   try {
-    const openaiModule = await import("openai");
-    const OpenAI = (openaiModule as { default?: new (config: { apiKey: string }) => any }).default;
-    if (!OpenAI) {
-      return null;
-    }
-
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      console.error("OPENAI_API_KEY is not set");
-      return null;
-    }
-
     return new OpenAI({ apiKey });
   } catch (error) {
     console.error("OpenAI SDK is not available", error);
@@ -43,11 +38,11 @@ async function createOpenAiClient() {
 }
 
 async function callOpenAi(prompt: string) {
-  if (!process.env.OPENAI_API_KEY) {
+  const client = createOpenAiClient();
+  if (!client) {
     return null;
   }
 
-  const client = await createOpenAiClient();
   const payload = {
     model: "gpt-4o-mini",
     input: [
@@ -56,7 +51,7 @@ async function callOpenAi(prompt: string) {
     ],
   } as const;
 
-  if (client?.responses?.create) {
+  if (client.responses?.create) {
     const response = await client.responses.create(payload);
     const outputText =
       (response as any)?.output_text ?? (response as any)?.output?.[0]?.content?.[0]?.text ?? "";
