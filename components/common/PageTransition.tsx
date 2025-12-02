@@ -15,6 +15,11 @@ const transition = { duration: 0.25, ease: "easeInOut" };
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
+  // Avoid remounting admin layout so the navbar stays persistent between admin routes.
+  if (pathname.startsWith("/admin")) {
+    return <>{children}</>;
+  }
+
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
