@@ -3,6 +3,10 @@ import "./globals.css";
 import { PreferencesProvider } from "@/components/common/PreferencesProvider";
 import { PageTransition } from "@/components/common/PageTransition";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+
 export const metadata: Metadata = {
   title: "Crown Home Care",
   description: "Operations dashboard and caregiver portal",
