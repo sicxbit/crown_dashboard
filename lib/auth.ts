@@ -1,3 +1,4 @@
+import "server-only";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { firebaseAdminAuth } from "./firebaseAdmin";
@@ -21,7 +22,8 @@ export type CurrentUser = {
 };
 
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
-  const sessionCookie = cookies().get("session");
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("session");
   if (!sessionCookie?.value) {
     return null;
   }
