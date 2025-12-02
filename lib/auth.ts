@@ -1,6 +1,5 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { cache } from "react";
 import { firebaseAdminAuth } from "./firebaseAdmin";
 import prisma from "./prisma";
 
@@ -63,7 +62,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     console.error("Failed to verify session cookie", error);
     return null;
   }
-});
+}
 
 export async function requireApiUserRole(role: "admin" | "caregiver") {
   const user = await getCurrentUser();
