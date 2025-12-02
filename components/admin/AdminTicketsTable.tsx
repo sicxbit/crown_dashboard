@@ -281,15 +281,15 @@ export default function AdminTicketsTable({ tickets }: Props) {
                   return (
                     <tr key={ticket.id} className="align-top">
                       <td className="px-4 py-4">
-                        <p className="font-medium text-slate-900">{ticket.title}</p>
-                        <p className="mt-1 text-xs text-slate-500">{ticket.description}</p>
+                        <p className="font-medium text-slate-900 dark:text-slate-100">{ticket.title}</p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">{ticket.description}</p>
                         <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
                           <span className="font-semibold">Routing reason:</span> {ticket.assignedReason}
                         </p>
                       </td>
                       <td className="px-4 py-4">
-                        <p className="font-medium text-slate-800">{ticket.createdBy.name}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="font-medium text-slate-800 dark:text-slate-200">{ticket.createdBy.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-300">
                           {ticket.createdBy.email ?? "N/A"}
                         </p>
                       </td>
@@ -303,7 +303,7 @@ export default function AdminTicketsTable({ tickets }: Props) {
                           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                             {ticket.assignedToName}
                           </p>
-                          <p className="text-xs text-slate-500">Assigned to: {ticket.assignedTo}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-300">Assigned to: {ticket.assignedTo}</p>
                         </div>
                       </td>
                       <td className="px-4 py-4">
@@ -315,7 +315,7 @@ export default function AdminTicketsTable({ tickets }: Props) {
                             })
                           }
                           disabled={isUpdating}
-                          className="w-full rounded-md border border-slate-200 px-2 py-1 text-sm capitalize focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                          className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-sm capitalize text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         >
                           {STATUS_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -338,7 +338,7 @@ export default function AdminTicketsTable({ tickets }: Props) {
                             ticket.priority.slice(1)}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-xs text-slate-500">
+                      <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-300">
                         {new Date(ticket.createdAt).toLocaleString()}
                       </td>
                     </tr>
