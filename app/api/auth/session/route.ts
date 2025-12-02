@@ -85,7 +85,7 @@ export async function POST(request: Request) {
       name: "session",
       value: sessionCookie,
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
       maxAge: FIVE_DAYS_IN_MS / 1000,
