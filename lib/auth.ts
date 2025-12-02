@@ -1,5 +1,5 @@
+import "server-only";
 import { cookies } from "next/headers";
-import { cache } from "react";
 import { firebaseAdminAuth } from "./firebaseAdmin";
 import prisma from "./prisma";
 
@@ -20,8 +20,9 @@ export type CurrentUser = {
   } | null;
 };
 
-export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
-  const sessionCookie = cookies().get("session");
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("session");
   if (!sessionCookie?.value) {
     return null;
   }
@@ -61,7 +62,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     console.error("Failed to verify session cookie", error);
     return null;
   }
-});
+}
 
 export async function requireApiUserRole(role: "admin" | "caregiver") {
   const user = await getCurrentUser();
