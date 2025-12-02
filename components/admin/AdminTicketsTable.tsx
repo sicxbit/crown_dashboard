@@ -315,7 +315,7 @@ export default function AdminTicketsTable({ tickets }: Props) {
                             })
                           }
                           disabled={isUpdating}
-                          className="w-full rounded-md border border-slate-200 px-2 py-1 text-sm capitalize focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                          className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-sm capitalize text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         >
                           {STATUS_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
