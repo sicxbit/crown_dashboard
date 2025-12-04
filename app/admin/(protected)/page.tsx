@@ -1,17 +1,8 @@
-import { redirect } from "next/navigation";
 import { addDays, isBefore, isWithinInterval } from "date-fns";
-import { getCurrentUser } from "@/lib/auth";
-import prisma from "@/lib/prisma";
 import AdminDashboard from "@/components/admin/AdminDashboard";
-import AdminShell from "@/components/admin/AdminShell";
+import prisma from "@/lib/prisma";
 
 export default async function AdminPage() {
-  const user = await getCurrentUser();
-
-  if (!user || user.role !== "admin") {
-    redirect("/admin/login");
-  }
-
   const [clients, caregivers, referrals] = await Promise.all([
     prisma.client.findMany({
       orderBy: { lastName: "asc" },
@@ -110,12 +101,10 @@ export default async function AdminPage() {
   });
 
   return (
-    <AdminShell user={user} active="dashboard">
-      <AdminDashboard
-        clients={clientsData}
-        caregivers={caregiversData}
-        referrals={referrals.map((ref) => ({ id: ref.id, source: ref.source }))}
-      />
-    </AdminShell>
+    <AdminDashboard
+      clients={clientsData}
+      caregivers={caregiversData}
+      referrals={referrals.map((ref) => ({ id: ref.id, source: ref.source }))}
+    />
   );
 }
