@@ -45,7 +45,13 @@ export default function AdminLoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
-      <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 shadow-lg transition-colors dark:border-slate-800 dark:bg-slate-900">
+      <div className="w-full max-w-md space-y-6 rounded-xl border border-slate-200 bg-white p-8 shadow-lg transition-colors dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-100 px-4 py-3 text-sm font-medium text-slate-800 transition-colors dark:bg-slate-800 dark:text-slate-100">
+          <span className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300">Admin Access</span>
+          <p className="text-sm text-slate-700 dark:text-slate-100">
+            Only agency admin accounts can sign in here. If you are already signed in, use the dashboard navigation to log out before switching accounts.
+          </p>
+        </div>
         <div className="flex justify-center">
           <Image src="/logo.png" alt="Crown Caregivers" width={160} height={48} className="h-12 w-auto" priority />
         </div>
