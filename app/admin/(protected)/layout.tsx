@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import AdminContentTransition from "@/components/admin/AdminContentTransition";
 import AdminShell from "@/components/admin/AdminShell";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -14,6 +15,8 @@ export default async function AdminLayout({
   }
 
   return (
-    <AdminShell user={user}>{children}</AdminShell>
+    <AdminShell user={user}>
+      <AdminContentTransition>{children}</AdminContentTransition>
+    </AdminShell>
   );
 }
