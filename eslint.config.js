@@ -1,50 +1,49 @@
-import js from '@eslint/js';
-import globals from 'globals';
-import reactHooks from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh';
-import nextPlugin from '@next/eslint-plugin-next';
-import tseslint from 'typescript-eslint';
+// eslint.config.js
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import globals from "globals";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import nextPlugin from "@next/eslint-plugin-next";
 
 export default tseslint.config(
-  // 1) global ignores
-  { ignores: ['dist', '.next'] },
+  // 1) Global ignores
+  { ignores: ["node_modules", ".next", "dist"] },
 
-  // 2) base JS rules
+  // 2) Base JS rules
   js.configs.recommended,
 
-  // 3) TS rules
+  // 3) TypeScript rules (type-checked)
   ...tseslint.configs.recommendedTypeChecked,
 
-  // 4) Next.js rules
-  nextPlugin.configs['core-web-vitals'],
-
-  // 5) your project-specific overrides
+  // 4) Project / Next-specific overrides
   {
-    name: 'core-rules',
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     languageOptions: {
       ecmaVersion: 2022,
       globals: globals.browser,
       parserOptions: {
-        project: ['./tsconfig.json'],
+        project: ["./tsconfig.json"],
         tsconfigRootDir: import.meta.dirname,
       },
     },
     plugins: {
-      'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
+      "react-hooks": reactHooks,
+      "react-refresh": reactRefresh,
+      "@next/next": nextPlugin,
     },
     rules: {
+      // React Hooks rules
       ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
-        'warn',
+
+      // Next.js core-web-vitals rules
+      ...nextPlugin.configs["core-web-vitals"].rules,
+
+      // React Refresh rule
+      "react-refresh/only-export-components": [
+        "warn",
         { allowConstantExport: true },
       ],
-    },
-    settings: {
-      next: {
-        rootDir: ['app/*/'],
-      },
     },
   }
 );

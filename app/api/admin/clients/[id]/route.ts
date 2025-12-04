@@ -25,10 +25,10 @@ type ClientPayload = {
   notes?: string | null;
 };
 
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: Request, context: any) {
+  const { params } = context;
+  const id = params?.id as string;
+
   try {
     await requireApiUserRole("admin");
   } catch (error) {
@@ -38,7 +38,10 @@ export async function POST(
   const body = (await request.json()) as ClientPayload;
 
   if (!body.firstName || !body.lastName || !body.status || !body.code) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing required fields" },
+      { status: 400 }
+    );
   }
 
   const data = {
@@ -58,14 +61,16 @@ export async function POST(
     primaryInsurance: body.primaryInsurance,
     insuranceMemberId: body.insuranceMemberId,
     referralId: body.referralId,
-    assessmentDate: body.assessmentDate ? new Date(body.assessmentDate) : null,
+    assessmentDate: body.assessmentDate
+      ? new Date(body.assessmentDate)
+      : null,
     riskLevel: body.riskLevel,
     status: body.status,
     notes: body.notes,
   } as const;
 
   const client = await prisma.client.update({
-    where: { id: params.id },
+    where: { id },
     data,
   });
 
