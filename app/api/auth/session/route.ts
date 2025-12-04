@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { firebaseAdminAuth } from "@/lib/firebaseAdmin";
 import prisma from "@/lib/prisma";
+import http from "http"
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
