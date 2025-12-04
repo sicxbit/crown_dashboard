@@ -5,5 +5,5 @@ export default function AdminTemplate({
 }: {
   children: React.ReactNode;
 }) {
-  return <AdminContentTransition>{children}</AdminContentTransition>;
+  return children;
 }

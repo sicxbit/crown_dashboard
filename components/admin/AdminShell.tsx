@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import type { CurrentUser } from "@/lib/auth";
 import LogoutButton from "@/components/common/LogoutButton";
 import ActiveUserSummary from "@/components/common/ActiveUserSummary";
+import AdminContentTransition from "./AdminContentTransition";
 
 const NAV_ITEMS: Array<{ key: string; label: string; href: string }> = [
   { key: "dashboard", label: "Dashboard", href: "/admin" },
@@ -50,11 +51,10 @@ export default function AdminShell({ user, children }: Props) {
                   <Link
                     key={item.key}
                     href={item.href}
-                    className={`rounded-md px-3 py-2 transition ${
-                      isActive
+                    className={`rounded-md px-3 py-2 transition ${isActive
                         ? "bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-200"
                         : "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-                    }`}
+                      }`}
                   >
                     {item.label}
                   </Link>
@@ -81,7 +81,9 @@ export default function AdminShell({ user, children }: Props) {
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-6 py-8">
-        {children}
+        <AdminContentTransition>
+          {children}
+        </AdminContentTransition>
       </main>
     </div>
   );
