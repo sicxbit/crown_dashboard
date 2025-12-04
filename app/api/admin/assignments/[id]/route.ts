@@ -4,8 +4,9 @@ import prisma from "@/lib/prisma";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: any
 ) {
+  const { id } = params as { id: string };
   try {
     await requireApiUserRole("admin");
   } catch (error) {
