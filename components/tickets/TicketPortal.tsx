@@ -1,4 +1,4 @@
-
+"use client";
 import { FormEvent, useState } from "react";
 import type { TicketPriority, TicketResponse } from "@/lib/tickets";
 
