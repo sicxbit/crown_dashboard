@@ -6,23 +6,33 @@ import nextPlugin from '@next/eslint-plugin-next';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
+  // 1) global ignores
   { ignores: ['dist', '.next'] },
+
+  // 2) base JS rules
+  js.configs.recommended,
+
+  // 3) TS rules
+  ...tseslint.configs.recommendedTypeChecked,
+
+  // 4) Next.js rules
+  nextPlugin.configs['core-web-vitals'],
+
+  // 5) your project-specific overrides
   {
     name: 'core-rules',
-    extends: [js.configs.recommended, ...tseslint.configs.recommendedTypeChecked, nextPlugin.configs['core-web-vitals']],
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2022,
       globals: globals.browser,
       parserOptions: {
-        projectService: true,
+        project: ['./tsconfig.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
-      next: nextPlugin,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,

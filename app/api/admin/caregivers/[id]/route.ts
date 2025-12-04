@@ -20,7 +20,7 @@ type CaregiverPayload = {
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+   { params }: { params: Record<string, string> }
 ) {
   try {
     await requireApiUserRole("admin");
