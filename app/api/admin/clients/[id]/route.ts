@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { requireApiUserRole } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
+type ClientRouteContext = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
 type ClientPayload = {
   code?: string;
   firstName?: string;
@@ -25,13 +31,15 @@ type ClientPayload = {
   notes?: string | null;
 };
 
-export async function POST(request: Request, context: any) {
-  const { params } = context;
-  const id = params?.id as string;
+export async function POST(
+  request: Request,
+  { params }: ClientRouteContext
+) {
+  const { id } = await params; // 👈 key change: await params
 
   try {
     await requireApiUserRole("admin");
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

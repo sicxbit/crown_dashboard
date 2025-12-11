@@ -3,6 +3,9 @@ import { cookies } from "next/headers";
 import { firebaseAdminAuth } from "./firebaseAdmin";
 import prisma from "./prisma";
 
+// cache comes from react (Next.js server components)
+import { cache } from "react";
+
 export type CurrentUser = {
   id: string;
   firebaseUid: string;
@@ -29,8 +32,8 @@ export type CurrentUser = {
   } | null;
 };
 
-// cache comes from react (Next.js server components)
-import { cache } from "react";
+// 🔹 reusable role type
+export type UserRole = "admin" | "caregiver";
 
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const cookieStore = await cookies();
@@ -40,13 +43,26 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   }
 
   try {
+    // 1) Verify Firebase session cookie
     const decoded = await firebaseAdminAuth().verifySessionCookie(
       sessionCookie.value,
       true
     );
 
-    const user = await prisma.user.findUnique({
+    // 2) Ensure we have a DB user for this Firebase UID
+    //    - if user exists -> update email
+    //    - if user doesn't exist -> create with default role
+    const user = await prisma.user.upsert({
       where: { firebaseUid: decoded.uid },
+      update: {
+        email: decoded.email ?? null,
+      },
+      create: {
+        firebaseUid: decoded.uid,
+        email: decoded.email ?? null,
+        // 👇 choose your default role for first-time logins
+        role: "caregiver",
+      },
       include: {
         caregiver: true,
       },
@@ -88,9 +104,6 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     return null;
   }
 });
-
-// 🔹 define a reusable role type instead of inline literal union
-export type UserRole = "admin" | "caregiver";
 
 export async function requireApiUserRole(role: UserRole) {
   const user = await getCurrentUser();

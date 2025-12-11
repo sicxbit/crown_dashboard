@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { requireApiUserRole } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
+type CaregiverRouteContext = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
 type CaregiverPayload = {
   employeeCode?: string | null;
   firstName?: string;
@@ -20,8 +26,10 @@ type CaregiverPayload = {
 
 export async function POST(
   request: Request,
-   { params }: { params: Record<string, string> }
+  { params }: CaregiverRouteContext
 ) {
+  const { id } = await params; // 👈 important: await params
+
   try {
     await requireApiUserRole("admin");
   } catch (error) {
@@ -31,7 +39,10 @@ export async function POST(
   const body = (await request.json()) as CaregiverPayload;
 
   if (!body.firstName || !body.lastName || !body.status) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing required fields" },
+      { status: 400 }
+    );
   }
 
   const data = {
@@ -51,7 +62,7 @@ export async function POST(
   } as const;
 
   const caregiver = await prisma.caregiver.update({
-    where: { id: params.id },
+    where: { id },
     data,
   });
 
