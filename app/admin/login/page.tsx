@@ -6,6 +6,18 @@ import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
 
+type SessionErrorPayload = {
+  error?: string;
+};
+
+function getErrorMessage(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null;
+  if ("error" in value && typeof (value as SessionErrorPayload).error === "string") {
+    return (value as SessionErrorPayload).error ?? null;
+  }
+  return null;
+}
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -13,8 +25,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
+  async function submitLogin() {
     setError(null);
 
     try {
@@ -29,36 +40,56 @@ export default function AdminLoginPage() {
       });
 
       if (!response.ok) {
-        const payload = await response.json();
-        throw new Error(payload.error ?? "Unable to sign in");
+        const json: unknown = await response.json().catch(() => null);
+        const apiError = getErrorMessage(json);
+        throw new Error(apiError ?? "Unable to sign in");
       }
 
       startTransition(() => {
         router.replace("/admin");
         router.refresh();
       });
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      setError((err as Error).message);
+      const message = err instanceof Error ? err.message : "Unable to sign in";
+      setError(message);
     }
-  };
+  }
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    void submitLogin();
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
       <div className="w-full max-w-md space-y-6 rounded-xl border border-slate-200 bg-white p-8 shadow-lg transition-colors dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-100 px-4 py-3 text-sm font-medium text-slate-800 transition-colors dark:bg-slate-800 dark:text-slate-100">
-          <span className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300">Admin Access</span>
+          <span className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300">
+            Admin Access
+          </span>
           <p className="text-sm text-slate-700 dark:text-slate-100">
-            Only agency admin accounts can sign in here. If you are already signed in, use the dashboard navigation to log out before switching accounts.
+            Only agency admin accounts can sign in here. If you are already signed in, use the
+            dashboard navigation to log out before switching accounts.
           </p>
         </div>
+
         <div className="flex justify-center">
-          <Image src="/logo.png" alt="Crown Caregivers" width={160} height={48} className="h-12 w-auto" priority />
+          <Image
+            src="/logo.png"
+            alt="Crown Caregivers"
+            width={160}
+            height={48}
+            className="h-12 w-auto"
+            priority
+          />
         </div>
+
         <h1 className="mt-6 text-2xl font-semibold">Admin Sign In</h1>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           Use your agency email and password to access the admin dashboard.
         </p>
+
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="space-y-1">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-200" htmlFor="email">
@@ -73,8 +104,12 @@ export default function AdminLoginPage() {
               className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             />
           </div>
+
           <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200" htmlFor="password">
+            <label
+              className="text-sm font-medium text-slate-700 dark:text-slate-200"
+              htmlFor="password"
+            >
               Password
             </label>
             <input
@@ -86,7 +121,9 @@ export default function AdminLoginPage() {
               className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             />
           </div>
+
           {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
+
           <button
             type="submit"
             disabled={isPending}

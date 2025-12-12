@@ -2,10 +2,33 @@ import { NextResponse } from "next/server";
 import { requireApiUserRole } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
+type CreateAssignmentBody = {
+  clientId?: string;
+  caregiverId?: string;
+  startDate?: string;
+  endDate?: string | null;
+  isPrimary?: boolean;
+  notes?: string | null;
+};
+
+function parseCreateAssignmentBody(value: unknown): CreateAssignmentBody {
+  if (!value || typeof value !== "object") return {};
+  const obj = value as Record<string, unknown>;
+
+  return {
+    clientId: typeof obj.clientId === "string" ? obj.clientId : undefined,
+    caregiverId: typeof obj.caregiverId === "string" ? obj.caregiverId : undefined,
+    startDate: typeof obj.startDate === "string" ? obj.startDate : undefined,
+    endDate: obj.endDate === null ? null : typeof obj.endDate === "string" ? obj.endDate : undefined,
+    isPrimary: typeof obj.isPrimary === "boolean" ? obj.isPrimary : undefined,
+    notes: obj.notes === null ? null : typeof obj.notes === "string" ? obj.notes : undefined,
+  };
+}
+
 export async function GET(request: Request) {
   try {
     await requireApiUserRole("admin");
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -20,11 +43,7 @@ export async function GET(request: Request) {
     where: { clientId },
     include: {
       caregiver: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-        },
+        select: { id: true, firstName: true, lastName: true },
       },
     },
     orderBy: [{ endDate: "asc" }, { startDate: "desc" }],
@@ -46,19 +65,13 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     await requireApiUserRole("admin");
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const { clientId, caregiverId, startDate, endDate, isPrimary, notes } = body as {
-    clientId?: string;
-    caregiverId?: string;
-    startDate?: string;
-    endDate?: string | null;
-    isPrimary?: boolean;
-    notes?: string | null;
-  };
+  const raw: unknown = await request.json().catch(() => null);
+  const { clientId, caregiverId, startDate, endDate, isPrimary, notes } =
+    parseCreateAssignmentBody(raw);
 
   if (!clientId || !caregiverId || !startDate) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -69,9 +82,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid startDate" }, { status: 400 });
   }
 
-  const end = endDate ? new Date(endDate) : null;
-  if (endDate && Number.isNaN(end!.getTime())) {
-    return NextResponse.json({ error: "Invalid endDate" }, { status: 400 });
+  let end: Date | null = null;
+  if (endDate) {
+    const parsedEnd = new Date(endDate);
+    if (Number.isNaN(parsedEnd.getTime())) {
+      return NextResponse.json({ error: "Invalid endDate" }, { status: 400 });
+    }
+    end = parsedEnd;
   }
 
   try {
@@ -102,7 +119,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ id: assignment.id });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Failed to create assignment", error);
     return NextResponse.json({ error: "Unable to create assignment" }, { status: 500 });
   }

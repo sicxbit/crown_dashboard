@@ -10,8 +10,6 @@ const themeOptions = [
   { value: "dark", label: "Dark" },
 ] as const;
 
-type ThemeOption = (typeof themeOptions)[number]["value"];
-
 export default function SettingsPage() {
   const { theme, setTheme, displayName, setDisplayName } = usePreferences();
   const [nameDraft, setNameDraft] = useState(displayName);
@@ -47,14 +45,16 @@ export default function SettingsPage() {
         <p className="text-sm text-slate-600 dark:text-slate-300">
           Switch between light and dark appearances. Your choice is saved in your browser.
         </p>
+
         <div className="mt-4 flex flex-wrap gap-3">
           {themeOptions.map((option) => {
             const isActive = theme === option.value;
+
             return (
               <button
                 key={option.value}
                 type="button"
-                onClick={() => setTheme(option.value as ThemeOption)}
+                onClick={() => setTheme(option.value)}
                 className={`rounded-lg border px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-brand-400 ${
                   isActive
                     ? "border-brand-600 bg-brand-600 text-white shadow"
@@ -79,6 +79,7 @@ export default function SettingsPage() {
             <label className="text-sm font-medium text-slate-700 dark:text-slate-200" htmlFor="displayName">
               Display name
             </label>
+
             <input
               id="displayName"
               type="text"
@@ -88,6 +89,7 @@ export default function SettingsPage() {
               placeholder="Enter your preferred name"
             />
           </div>
+
           <button
             type="submit"
             className="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-400"

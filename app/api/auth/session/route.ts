@@ -8,13 +8,27 @@ export const dynamic = "force-dynamic";
 
 const FIVE_DAYS_IN_MS = 1000 * 60 * 60 * 24 * 5;
 
+type SessionRequestBody = {
+  idToken: string;
+};
+
+function parseSessionRequestBody(value: unknown): SessionRequestBody | null {
+  if (!value || typeof value !== "object") return null;
+  const obj = value as Record<string, unknown>;
+  if (typeof obj.idToken !== "string" || !obj.idToken.trim()) return null;
+  return { idToken: obj.idToken };
+}
+
 export async function POST(request: Request) {
   try {
-    const { idToken } = await request.json();
+    const raw: unknown = await request.json().catch(() => null);
+    const parsed = parseSessionRequestBody(raw);
 
-    if (!idToken || typeof idToken !== "string") {
+    if (!parsed) {
       return NextResponse.json({ error: "Missing idToken" }, { status: 400 });
     }
+
+    const { idToken } = parsed;
 
     const auth = firebaseAdminAuth();
     const decoded = await auth.verifyIdToken(idToken);
@@ -23,19 +37,16 @@ export async function POST(request: Request) {
     const email = decoded.email ?? null;
     const phoneNumber = decoded.phone_number ?? null;
 
-    // 1️⃣ Try to find existing user by firebaseUid
+    // 1) Try to find existing user by firebaseUid
     let user = await prisma.user.findUnique({
       where: { firebaseUid },
     });
 
-    // 2️⃣ If not found, try by email (for legacy email-only records)
+    // 2) If not found, try by email (legacy email-only records)
     if (!user && email) {
-      user = await prisma.user.findFirst({
-        where: { email },
-      });
+      user = await prisma.user.findFirst({ where: { email } });
 
       if (user) {
-        // attach firebaseUid to legacy user row
         user = await prisma.user.update({
           where: { id: user.id },
           data: { firebaseUid },
@@ -43,10 +54,10 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3️⃣ If still no user, we need to create one
+    // 3) If still no user, create one
     if (!user) {
       if (phoneNumber) {
-        // 📱 Caregiver flow: must match a caregiver record by phone
+        // Caregiver flow: match a caregiver record by phone
         const caregiver = await prisma.caregiver.findFirst({
           where: { phone: phoneNumber },
         });
@@ -67,9 +78,7 @@ export async function POST(request: Request) {
           },
         });
       } else if (email) {
-        // ✉️ Admin (email-based) flow
-        // For now, auto-create admin row for this email.
-        // You can tighten this by checking domain or env ADMIN_EMAIL.
+        // Admin flow (email-based)
         user = await prisma.user.create({
           data: {
             firebaseUid,
@@ -84,7 +93,7 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      // 4️⃣ User existed: keep email up to date
+      // 4) User existed: keep email up to date
       if (email && user.email !== email) {
         user = await prisma.user.update({
           where: { id: user.id },
@@ -92,8 +101,7 @@ export async function POST(request: Request) {
         });
       }
 
-      // If phone number exists and user isn't linked to a caregiver yet,
-      // try to auto-link the caregiver.
+      // If phone exists and user isn't linked to caregiver, try auto-link
       if (phoneNumber && !user.caregiverId) {
         const caregiver = await prisma.caregiver.findFirst({
           where: { phone: phoneNumber },
@@ -111,12 +119,11 @@ export async function POST(request: Request) {
       }
     }
 
-    // 5️⃣ Create Firebase session cookie
+    // 5) Create Firebase session cookie
     const sessionCookie = await auth.createSessionCookie(idToken, {
       expiresIn: FIVE_DAYS_IN_MS,
     });
 
-    // 🔑 FIX: await cookies()
     const cookieStore = await cookies();
     cookieStore.set({
       name: "session",
@@ -129,7 +136,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ status: "ok", role: user.role });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Session creation failed", error);
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
@@ -137,15 +144,11 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   try {
-    // 🔑 FIX: await cookies() here too
     const cookieStore = await cookies();
     cookieStore.delete("session");
     return NextResponse.json({ status: "signed_out" });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Failed to clear session cookie", error);
-    return NextResponse.json(
-      { error: "Unable to sign out" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Unable to sign out" }, { status: 500 });
   }
 }

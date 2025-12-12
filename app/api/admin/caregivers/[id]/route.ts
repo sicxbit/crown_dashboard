@@ -24,46 +24,72 @@ type CaregiverPayload = {
   status?: string;
 };
 
-export async function POST(
-  request: Request,
-  { params }: CaregiverRouteContext
-) {
-  const { id } = await params; // 👈 important: await params
+function parseCaregiverPayload(value: unknown): CaregiverPayload {
+  if (!value || typeof value !== "object") return {};
+  const obj = value as Record<string, unknown>;
+
+  const getNullableString = (v: unknown): string | null | undefined =>
+    v === null ? null : typeof v === "string" ? v : undefined;
+
+  return {
+    employeeCode: getNullableString(obj.employeeCode),
+    firstName: typeof obj.firstName === "string" ? obj.firstName : undefined,
+    lastName: typeof obj.lastName === "string" ? obj.lastName : undefined,
+    dob: getNullableString(obj.dob),
+    phone: getNullableString(obj.phone),
+    email: getNullableString(obj.email),
+    addressLine1: getNullableString(obj.addressLine1),
+    addressLine2: getNullableString(obj.addressLine2),
+    city: getNullableString(obj.city),
+    state: getNullableString(obj.state),
+    zip: getNullableString(obj.zip),
+    sandataEvvId: getNullableString(obj.sandataEvvId),
+    status: typeof obj.status === "string" ? obj.status : undefined,
+  };
+}
+
+export async function POST(request: Request, { params }: CaregiverRouteContext) {
+  const { id } = await params; // Next 15 params promise
 
   try {
     await requireApiUserRole("admin");
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json()) as CaregiverPayload;
+  const raw: unknown = await request.json().catch(() => null);
+  const body = parseCaregiverPayload(raw);
 
   if (!body.firstName || !body.lastName || !body.status) {
-    return NextResponse.json(
-      { error: "Missing required fields" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const data = {
-    employeeCode: body.employeeCode,
-    firstName: body.firstName,
-    lastName: body.lastName,
-    dob: body.dob ? new Date(body.dob) : null,
-    phone: body.phone,
-    email: body.email,
-    addressLine1: body.addressLine1,
-    addressLine2: body.addressLine2,
-    city: body.city,
-    state: body.state,
-    zip: body.zip,
-    sandataEvvId: body.sandataEvvId,
-    status: body.status,
-  } as const;
+  let parsedDob: Date | null = null;
+  if (body.dob) {
+    const d = new Date(body.dob);
+    if (Number.isNaN(d.getTime())) {
+      return NextResponse.json({ error: "Invalid dob" }, { status: 400 });
+    }
+    parsedDob = d;
+  }
 
   const caregiver = await prisma.caregiver.update({
     where: { id },
-    data,
+    data: {
+      employeeCode: body.employeeCode ?? null,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      dateOfBirth: parsedDob,
+      phone: body.phone ?? null,
+      email: body.email ?? null,
+      address: body.addressLine1 ?? null,
+      addressLine2: body.addressLine2 ?? null,
+      city: body.city ?? null,
+      state: body.state ?? null,
+      zip: body.zip ?? null,
+      sandataEvvId: body.sandataEvvId ?? null,
+      status: body.status,
+    },
   });
 
   return NextResponse.json({ id: caregiver.id });

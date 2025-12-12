@@ -16,12 +16,11 @@ model User {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  caregiver    Caregiver? @relation("CaregiverUser", fields: [caregiverId], references: [id])
+  caregiver     Caregiver? @relation("CaregiverUser", fields: [caregiverId], references: [id])
   createdTickets Ticket[]  @relation("TicketCreator")
 
   @@map("users")
 }
-
 
 model Referral {
   id           String   @id @default(uuid())
@@ -74,22 +73,36 @@ model Client {
 }
 
 model Caregiver {
-  id             String                @id @default(uuid())
-  employeeCode   String?               @map("employee_code")
-  firstName      String                @map("first_name")
-  lastName       String                @map("last_name")
-  dob            DateTime?             @map("dob")
-  phone          String?               @map("phone")
-  email          String?               @map("email")
-  addressLine1   String?               @map("address_line1")
-  addressLine2   String?               @map("address_line2")
-  city           String?               @map("city")
-  state          String?               @map("state")
-  zip            String?               @map("zip")
-  sandataEvvId   String?               @map("sandata_evv_id")
-  status         String                @map("status")
-  createdAt      DateTime              @default(now()) @map("created_at")
-  updatedAt      DateTime              @updatedAt @map("updated_at")
+  id             String    @id @default(uuid())
+  employeeCode   String?   @map("employee_code")
+
+  firstName      String    @map("first_name")
+  middleName     String?   @map("middle_name")     // ✅ NEW COLUMN
+  lastName       String    @map("last_name")
+
+  // ✅ rename prisma field, keep same DB column name
+  dateOfBirth    DateTime? @map("dob")
+
+  // keep phone/email nullable as in DB
+  phone          String?   @map("phone")
+  email          String?   @map("email")
+
+  // ✅ rename prisma field, keep same DB column name
+  address        String?   @map("address_line1")
+  addressLine2   String?   @map("address_line2")
+  city           String?   @map("city")
+  state          String?   @map("state")
+  zip            String?   @map("zip")
+
+  gender         String?   @map("gender")          // ✅ NEW COLUMN
+  ssnLast4       String?   @map("ssn_last4")       // ✅ NEW COLUMN
+  isActive       Boolean   @default(true) @map("is_active") // ✅ NEW COLUMN
+
+  sandataEvvId   String?   @map("sandata_evv_id")
+  status         String    @map("status")
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   user           User?                 @relation("CaregiverUser")
   assignments    CaregiverAssignment[]
@@ -138,7 +151,7 @@ model ServicePlan {
   clientId      String   @map("client_id")
   effectiveDate DateTime @map("effective_date")
   hoursPerWeek  Int      @map("hours_per_week")
-  tasksJson     String     @map("tasks_json")
+  tasksJson     String   @map("tasks_json")
   isActive      Boolean  @default(false) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
@@ -149,21 +162,21 @@ model ServicePlan {
 }
 
 model VisitLog {
-  id            String    @id @default(uuid())
-  clientId      String    @map("client_id")
-  caregiverId   String    @map("caregiver_id")
-  scheduledStart DateTime? @map("scheduled_start")
-  scheduledEnd   DateTime? @map("scheduled_end")
-  actualStart   DateTime?  @map("actual_start")
-  actualEnd     DateTime?  @map("actual_end")
-  serviceCode   String?    @map("service_code")
-  notes         String?    @map("notes")
-  hasIncident   Boolean    @default(false) @map("has_incident")
-  createdAt     DateTime   @default(now()) @map("created_at")
-  updatedAt     DateTime   @updatedAt @map("updated_at")
+  id             String     @id @default(uuid())
+  clientId       String     @map("client_id")
+  caregiverId    String     @map("caregiver_id")
+  scheduledStart DateTime?  @map("scheduled_start")
+  scheduledEnd   DateTime?  @map("scheduled_end")
+  actualStart    DateTime?  @map("actual_start")
+  actualEnd      DateTime?  @map("actual_end")
+  serviceCode    String?    @map("service_code")
+  notes          String?    @map("notes")
+  hasIncident    Boolean    @default(false) @map("has_incident")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
 
-  client        Client     @relation(fields: [clientId], references: [id])
-  caregiver     Caregiver  @relation(fields: [caregiverId], references: [id])
+  client         Client     @relation(fields: [clientId], references: [id])
+  caregiver      Caregiver  @relation(fields: [caregiverId], references: [id])
 
   @@index([clientId], map: "idx_visit_logs_client")
   @@index([caregiverId], map: "idx_visit_logs_caregiver")
@@ -171,15 +184,15 @@ model VisitLog {
 }
 
 model ComplianceItem {
-  id             String   @id @default(uuid())
-  caregiverId    String   @map("caregiver_id")
-  itemType       String   @map("item_type")
-  status         String   @map("status")
+  id             String    @id @default(uuid())
+  caregiverId    String    @map("caregiver_id")
+  itemType       String    @map("item_type")
+  status         String    @map("status")
   issuedDate     DateTime? @map("issued_date")
   expirationDate DateTime? @map("expiration_date")
-  notes          String?  @map("notes")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  notes          String?   @map("notes")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   caregiver      Caregiver @relation(fields: [caregiverId], references: [id])
 
@@ -188,15 +201,15 @@ model ComplianceItem {
 }
 
 model TrainingRecord {
-  id             String   @id @default(uuid())
-  caregiverId    String   @map("caregiver_id")
-  courseName     String   @map("course_name")
+  id             String    @id @default(uuid())
+  caregiverId    String    @map("caregiver_id")
+  courseName     String    @map("course_name")
   completedDate  DateTime? @map("completed_date")
   expirationDate DateTime? @map("expiration_date")
-  hours          Int?     @map("hours")
-  notes          String?  @map("notes")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  hours          Int?      @map("hours")
+  notes          String?   @map("notes")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   caregiver      Caregiver @relation(fields: [caregiverId], references: [id])
 
@@ -208,13 +221,13 @@ model Ticket {
   id              String   @id @default(uuid())
   title           String
   description     String
-  status          String   @default("open")   @map("status")
+  status          String   @default("open") @map("status")
   priority        String   @default("medium") @map("priority")
   assignedTo      String   @default("unassigned") @map("assigned_to")
   assignedReason  String   @default("Pending assignment") @map("assigned_reason")
   category        String   @default("General") @map("category")
-  createdAt       DateTime @default(now())    @map("created_at")
-  updatedAt       DateTime @updatedAt         @map("updated_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
   createdByUserId String   @map("created_by_user_id")
 
   createdBy User  @relation("TicketCreator", fields: [createdByUserId], references: [id])
@@ -224,16 +237,16 @@ model Ticket {
 }
 
 model Incident {
-  id           String    @id @default(uuid())
-  clientId     String    @map("client_id")
-  caregiverId  String?   @map("caregiver_id")
-  incidentDate DateTime  @map("incident_date")
-  description  String    @map("description")
-  status       String    @map("status")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  id           String     @id @default(uuid())
+  clientId     String     @map("client_id")
+  caregiverId  String?    @map("caregiver_id")
+  incidentDate DateTime   @map("incident_date")
+  description  String     @map("description")
+  status       String     @map("status")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
 
-  client       Client    @relation(fields: [clientId], references: [id])
+  client       Client     @relation(fields: [clientId], references: [id])
   caregiver    Caregiver? @relation(fields: [caregiverId], references: [id])
 
   @@index([clientId], map: "idx_incidents_client")

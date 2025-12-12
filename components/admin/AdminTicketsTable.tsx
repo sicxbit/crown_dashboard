@@ -4,30 +4,84 @@ import { useMemo, useState } from "react";
 import type { TicketResponse, TicketStatus } from "@/lib/tickets";
 import { ASSIGNEE_DIRECTORY } from "@/lib/ticketAssignees";
 
-const STATUS_OPTIONS: Array<{ value: TicketStatus; label: string }> = [
+/* -------------------- constants -------------------- */
+
+const STATUS_OPTIONS = [
   { value: "open", label: "Open" },
   { value: "in_progress", label: "In Progress" },
   { value: "resolved", label: "Resolved" },
-];
+] as const satisfies ReadonlyArray<{ value: TicketStatus; label: string }>;
+
+const FILTER_ALL = "all" as const;
 
 type Props = {
   tickets: TicketResponse[];
 };
 
-type FilterStatus = TicketStatus | "all";
-type FilterAssignee = keyof typeof ASSIGNEE_DIRECTORY | "all";
+// ✅ Derive FilterStatus safely
+const FILTER_STATUS_OPTIONS = [FILTER_ALL, ...STATUS_OPTIONS.map((s) => s.value)] as const;
+type FilterStatus = (typeof FILTER_STATUS_OPTIONS)[number];
+
+// ✅ Type guard to avoid `as` assertions
+function isAssigneeId(value: string): value is keyof typeof ASSIGNEE_DIRECTORY {
+  return Object.prototype.hasOwnProperty.call(ASSIGNEE_DIRECTORY, value);
+}
+
+// ✅ Build typed assignee list without `as Array<...>` (fixes your error)
+const ASSIGNEE_IDS = Object.keys(ASSIGNEE_DIRECTORY).filter(isAssigneeId);
+const FILTER_ASSIGNEE_OPTIONS = [FILTER_ALL, ...ASSIGNEE_IDS] as const;
+type FilterAssignee = (typeof FILTER_ASSIGNEE_OPTIONS)[number];
 
 type TicketUpdatePayload = Partial<Pick<TicketResponse, "status" | "priority">>;
+
+type ApiErrorPayload = { error?: string };
+type TicketOkPayload = { ticket: TicketResponse };
+
+/* -------------------- helpers -------------------- */
+
+function getApiErrorMessage(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null;
+  if ("error" in value && typeof (value as ApiErrorPayload).error === "string") {
+    return (value as ApiErrorPayload).error ?? null;
+  }
+  return null;
+}
+
+function isTicketOkPayload(value: unknown): value is TicketOkPayload {
+  if (!value || typeof value !== "object") return false;
+  if (!("ticket" in value)) return false;
+
+  const ticket = (value as { ticket?: unknown }).ticket;
+  if (!ticket || typeof ticket !== "object") return false;
+
+  return "id" in (ticket as Record<string, unknown>);
+}
+
+function isTicketStatus(value: string): value is TicketStatus {
+  return (STATUS_OPTIONS as ReadonlyArray<{ value: TicketStatus }>).some((o) => o.value === value);
+}
+
+function isFilterStatus(value: string): value is FilterStatus {
+  return (FILTER_STATUS_OPTIONS as readonly string[]).includes(value);
+}
+
+function isFilterAssignee(value: string): value is FilterAssignee {
+  return (FILTER_ASSIGNEE_OPTIONS as readonly string[]).includes(value);
+}
+
+/* -------------------- styles -------------------- */
 
 const inputClasses =
   "rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
 
 const labelClasses = "text-sm font-medium text-slate-700 dark:text-slate-200";
 
+/* ==================== component ==================== */
+
 export default function AdminTicketsTable({ tickets }: Props) {
   const [ticketList, setTicketList] = useState<TicketResponse[]>(tickets);
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
-  const [filterAssignee, setFilterAssignee] = useState<FilterAssignee>("all");
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>(FILTER_ALL);
+  const [filterAssignee, setFilterAssignee] = useState<FilterAssignee>(FILTER_ALL);
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingTicketId, setUpdatingTicketId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,14 +95,12 @@ export default function AdminTicketsTable({ tickets }: Props) {
 
   const filteredTickets = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
+
     return ticketList.filter((ticket) => {
-      if (filterStatus !== "all" && ticket.status !== filterStatus) {
-        return false;
-      }
-      if (filterAssignee !== "all" && ticket.assignedTo !== filterAssignee) {
-        return false;
-      }
+      if (filterStatus !== FILTER_ALL && ticket.status !== filterStatus) return false;
+      if (filterAssignee !== FILTER_ALL && ticket.assignedTo !== filterAssignee) return false;
       if (!term) return true;
+
       return (
         ticket.title.toLowerCase().includes(term) ||
         ticket.description.toLowerCase().includes(term)
@@ -56,7 +108,7 @@ export default function AdminTicketsTable({ tickets }: Props) {
     });
   }, [filterAssignee, filterStatus, searchTerm, ticketList]);
 
-  const handleTicketUpdate = async (id: string, updates: TicketUpdatePayload) => {
+  async function handleTicketUpdate(id: string, updates: TicketUpdatePayload) {
     setError(null);
     setSuccessMessage(null);
     setUpdatingTicketId(id);
@@ -69,30 +121,34 @@ export default function AdminTicketsTable({ tickets }: Props) {
       });
 
       if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error((payload as { error?: string }).error ?? "Unable to update ticket");
+        const json: unknown = await response.json().catch(() => null);
+        throw new Error(getApiErrorMessage(json) ?? "Unable to update ticket");
       }
 
-      const payload = (await response.json()) as { ticket: TicketResponse };
-      setTicketList((current) => current.map((item) => (item.id === id ? payload.ticket : item)));
+      const json: unknown = await response.json().catch(() => null);
+      if (!isTicketOkPayload(json)) {
+        throw new Error("Invalid response from server");
+      }
+
+      setTicketList((current) => current.map((t) => (t.id === id ? json.ticket : t)));
       setSuccessMessage("Ticket updated successfully.");
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      setError((err as Error).message);
+      setError(err instanceof Error ? err.message : "Unable to update ticket");
     } finally {
       setUpdatingTicketId(null);
     }
-  };
+  }
 
-  const resetCreateForm = () => {
+  function resetCreateForm() {
     setNewTitle("");
     setNewDescription("");
     setNewPriority("medium");
-  };
+  }
 
-  const handleCreateTicket = async () => {
+  async function handleCreateTicket() {
     if (!newTitle.trim() || !newDescription.trim()) {
-      setError("Title and description are required to create a ticket.");
+      setError("Title and description are required.");
       return;
     }
 
@@ -107,36 +163,43 @@ export default function AdminTicketsTable({ tickets }: Props) {
         body: JSON.stringify({
           title: newTitle.trim(),
           description: newDescription.trim(),
-          priority: newPriority, // "low" | "medium" | "high" -> matches VALID_PRIORITIES
+          priority: newPriority,
         }),
       });
 
       if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error((payload as { error?: string }).error ?? "Unable to create ticket");
+        const json: unknown = await response.json().catch(() => null);
+        throw new Error(getApiErrorMessage(json) ?? "Unable to create ticket");
       }
 
-      const payload = (await response.json()) as { ticket: TicketResponse };
-      setTicketList((current) => [payload.ticket, ...current]);
+      const json: unknown = await response.json().catch(() => null);
+      if (!isTicketOkPayload(json)) {
+        throw new Error("Invalid response from server");
+      }
+
+      setTicketList((current) => [json.ticket, ...current]);
       setSuccessMessage("Ticket created successfully.");
       resetCreateForm();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      setError((err as Error).message);
+      setError(err instanceof Error ? err.message : "Unable to create ticket");
     } finally {
       setIsCreating(false);
     }
-  };
+  }
 
   return (
     <section className="mx-auto flex max-w-7xl flex-col gap-6 px-6">
       <header className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Support Tickets</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+            Support Tickets
+          </h1>
           <p className="text-sm text-slate-600 dark:text-slate-300">
             Track open issues, manage assignments, and resolve requests quickly.
           </p>
         </div>
+
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-3">
             <label className={labelClasses} htmlFor="ticket-status-filter">
@@ -145,26 +208,33 @@ export default function AdminTicketsTable({ tickets }: Props) {
             <select
               id="ticket-status-filter"
               value={filterStatus}
-              onChange={(event) => setFilterStatus(event.target.value as FilterStatus)}
+              onChange={(event) => {
+                const v = event.target.value;
+                setFilterStatus(isFilterStatus(v) ? v : FILTER_ALL);
+              }}
               className={inputClasses}
             >
-              <option value="all">All</option>
+              <option value={FILTER_ALL}>All</option>
               {STATUS_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
+
             <label className={labelClasses} htmlFor="ticket-assignee-filter">
               Assignee
             </label>
             <select
               id="ticket-assignee-filter"
               value={filterAssignee}
-              onChange={(event) => setFilterAssignee(event.target.value as FilterAssignee)}
+              onChange={(event) => {
+                const v = event.target.value;
+                setFilterAssignee(isFilterAssignee(v) ? v : FILTER_ALL);
+              }}
               className={inputClasses}
             >
-              <option value="all">All</option>
+              <option value={FILTER_ALL}>All</option>
               {Object.entries(ASSIGNEE_DIRECTORY).map(([id, name]) => (
                 <option key={id} value={id}>
                   {name}
@@ -172,6 +242,7 @@ export default function AdminTicketsTable({ tickets }: Props) {
               ))}
             </select>
           </div>
+
           <div className="flex-1 md:max-w-sm">
             <input
               type="search"
@@ -182,13 +253,18 @@ export default function AdminTicketsTable({ tickets }: Props) {
             />
           </div>
         </div>
+
         {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
-        {successMessage && <p className="text-sm text-green-600 dark:text-green-300">{successMessage}</p>}
+        {successMessage && (
+          <p className="text-sm text-green-600 dark:text-green-300">{successMessage}</p>
+        )}
       </header>
 
-      {/* Create Ticket Card */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">Create Ticket</h2>
+        <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
+          Create Ticket
+        </h2>
+
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
             <label className={labelClasses} htmlFor="new-title">
@@ -203,6 +279,7 @@ export default function AdminTicketsTable({ tickets }: Props) {
               placeholder="Short summary of the issue"
             />
           </div>
+
           <div className="md:col-span-2">
             <label className={labelClasses} htmlFor="new-description">
               Description
@@ -216,6 +293,7 @@ export default function AdminTicketsTable({ tickets }: Props) {
               placeholder="Include relevant details, steps to reproduce, etc."
             />
           </div>
+
           <div>
             <label className={labelClasses} htmlFor="new-priority">
               Priority
@@ -223,9 +301,10 @@ export default function AdminTicketsTable({ tickets }: Props) {
             <select
               id="new-priority"
               value={newPriority}
-              onChange={(e) =>
-                setNewPriority(e.target.value as TicketResponse["priority"])
-              }
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "low" || v === "medium" || v === "high") setNewPriority(v);
+              }}
               className={`mt-1 w-full ${inputClasses}`}
             >
               <option value="low">Low</option>
@@ -234,6 +313,7 @@ export default function AdminTicketsTable({ tickets }: Props) {
             </select>
           </div>
         </div>
+
         <div className="mt-4 flex justify-end gap-2">
           <button
             type="button"
@@ -243,9 +323,10 @@ export default function AdminTicketsTable({ tickets }: Props) {
           >
             Clear
           </button>
+
           <button
             type="button"
-            onClick={handleCreateTicket}
+            onClick={() => void handleCreateTicket()}
             disabled={isCreating}
             className="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:bg-brand-400"
           >
@@ -259,15 +340,30 @@ export default function AdminTicketsTable({ tickets }: Props) {
           <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-800/50">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Ticket</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Created By</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Category</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Assignee</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Status</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Priority</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">Created</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">
+                  Ticket
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">
+                  Created By
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">
+                  Category
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">
+                  Assignee
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">
+                  Priority
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-200">
+                  Created
+                </th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {filteredTickets.length === 0 ? (
                 <tr>
@@ -278,42 +374,55 @@ export default function AdminTicketsTable({ tickets }: Props) {
               ) : (
                 filteredTickets.map((ticket) => {
                   const isUpdating = updatingTicketId === ticket.id;
+
                   return (
                     <tr key={ticket.id} className="align-top">
                       <td className="px-4 py-4">
-                        <p className="font-medium text-slate-900 dark:text-slate-100">{ticket.title}</p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">{ticket.description}</p>
+                        <p className="font-medium text-slate-900 dark:text-slate-100">
+                          {ticket.title}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">
+                          {ticket.description}
+                        </p>
                         <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
-                          <span className="font-semibold">Routing reason:</span> {ticket.assignedReason}
+                          <span className="font-semibold">Routing reason:</span>{" "}
+                          {ticket.assignedReason}
                         </p>
                       </td>
+
                       <td className="px-4 py-4">
-                        <p className="font-medium text-slate-800 dark:text-slate-200">{ticket.createdBy.name}</p>
+                        <p className="font-medium text-slate-800 dark:text-slate-200">
+                          {ticket.createdBy.name}
+                        </p>
                         <p className="text-xs text-slate-500 dark:text-slate-300">
                           {ticket.createdBy.email ?? "N/A"}
                         </p>
                       </td>
+
                       <td className="px-4 py-4">
                         <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium uppercase text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                           {ticket.category}
                         </span>
                       </td>
+
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-1">
                           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                             {ticket.assignedToName}
                           </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-300">Assigned to: {ticket.assignedTo}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-300">
+                            Assigned to: {ticket.assignedTo}
+                          </p>
                         </div>
                       </td>
+
                       <td className="px-4 py-4">
                         <select
                           value={ticket.status}
-                          onChange={(event) =>
-                            handleTicketUpdate(ticket.id, {
-                              status: event.target.value as TicketStatus,
-                            })
-                          }
+                          onChange={(event) => {
+                            const v = event.target.value;
+                            if (isTicketStatus(v)) void handleTicketUpdate(ticket.id, { status: v });
+                          }}
                           disabled={isUpdating}
                           className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-sm capitalize text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         >
@@ -324,6 +433,7 @@ export default function AdminTicketsTable({ tickets }: Props) {
                           ))}
                         </select>
                       </td>
+
                       <td className="px-4 py-4">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
@@ -334,10 +444,10 @@ export default function AdminTicketsTable({ tickets }: Props) {
                               : "bg-emerald-100 text-emerald-700"
                           }`}
                         >
-                          {ticket.priority.charAt(0).toUpperCase() +
-                            ticket.priority.slice(1)}
+                          {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
                         </span>
                       </td>
+
                       <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-300">
                         {new Date(ticket.createdAt).toLocaleString()}
                       </td>

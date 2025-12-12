@@ -23,41 +23,78 @@ Return ONLY valid JSON:
   "reason": "<1–2 sentence explanation>"
 }`;
 
-function createOpenAiClient() {
+type ResponsesCreatePayload = {
+  model: string;
+  input: Array<
+    | { role: "system"; content: string }
+    | { role: "user"; content: string }
+  >;
+};
+
+type ResponsesApiJson = {
+  output_text?: string;
+  output?: Array<{
+    content?: Array<{
+      text?: string;
+    }>;
+  }>;
+};
+
+function createOpenAiClient(): OpenAI | null {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return null;
-  }
+  if (!apiKey) return null;
 
   try {
     return new OpenAI({ apiKey });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("OpenAI SDK is not available", error);
     return null;
   }
 }
 
-async function callOpenAi(prompt: string) {
-  const client = createOpenAiClient();
-  if (!client) {
-    return null;
+function extractResponseText(value: unknown): string {
+  if (!value || typeof value !== "object") return "";
+
+  // Prefer output_text
+  if ("output_text" in value && typeof (value as { output_text?: unknown }).output_text === "string") {
+    return (value as { output_text: string }).output_text;
   }
 
-  const payload = {
+  // Fallback shape: output[0].content[0].text
+  if ("output" in value && Array.isArray((value as { output?: unknown }).output)) {
+    const out0 = (value as { output: unknown[] }).output[0];
+    if (out0 && typeof out0 === "object" && "content" in out0 && Array.isArray((out0 as { content?: unknown }).content)) {
+      const c0 = (out0 as { content: unknown[] }).content[0];
+      if (c0 && typeof c0 === "object" && "text" in c0 && typeof (c0 as { text?: unknown }).text === "string") {
+        return (c0 as { text: string }).text;
+      }
+    }
+  }
+
+  return "";
+}
+
+async function callOpenAi(prompt: string): Promise<string | null> {
+  const client = createOpenAiClient();
+  if (!client) return null;
+
+  const payload: ResponsesCreatePayload = {
     model: "gpt-4o-mini",
     input: [
       { role: "system", content: ROUTING_SYSTEM_PROMPT },
       { role: "user", content: prompt },
     ],
-  } as const;
+  };
 
-  if (client.responses?.create) {
-    const response = await client.responses.create(payload);
-    const outputText =
-      (response as any)?.output_text ?? (response as any)?.output?.[0]?.content?.[0]?.text ?? "";
-    return String(outputText).trim();
+  // Preferred path: OpenAI SDK (Responses API)
+  const maybeResponses = (client as unknown as { responses?: { create?: (p: ResponsesCreatePayload) => Promise<unknown> } }).responses;
+  if (maybeResponses?.create) {
+    const respUnknown = await maybeResponses.create(payload);
+    const text = extractResponseText(respUnknown);
+    return text.trim() ? text.trim() : null;
   }
 
+  // Fallback: direct HTTP call
   const apiResponse = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -71,12 +108,10 @@ async function callOpenAi(prompt: string) {
     throw new Error(`OpenAI API request failed with status ${apiResponse.status}`);
   }
 
-  const json = (await apiResponse.json()) as {
-    output_text?: string;
-    output?: Array<{ content?: Array<{ text?: string }> }>;
-  };
-  const text = json.output_text ?? json.output?.[0]?.content?.[0]?.text ?? "";
-  return String(text).trim();
+  const json: unknown = await apiResponse.json().catch(() => null);
+  const safeJson = (json ?? {}) as ResponsesApiJson;
+  const text = safeJson.output_text ?? safeJson.output?.[0]?.content?.[0]?.text ?? "";
+  return String(text).trim() ? String(text).trim() : null;
 }
 
 const ASSIGNEE_VALUES = new Set<RouteTicketResult["assignee"]>([
@@ -93,28 +128,35 @@ const CATEGORY_VALUES = new Set<RouteTicketResult["category"]>([
   "Onboarding",
 ]);
 
-function parseRoutingResponse(responseText: string) {
+function parseRoutingResponse(responseText: string): Omit<RouteTicketResult, "source"> | null {
   try {
-    const parsed = JSON.parse(responseText) as Partial<RouteTicketResult>;
-    if (
-      parsed &&
-      typeof parsed.assignee === "string" &&
-      typeof parsed.category === "string" &&
-      typeof parsed.reason === "string" &&
-      ASSIGNEE_VALUES.has(parsed.assignee as RouteTicketResult["assignee"]) &&
-      CATEGORY_VALUES.has(parsed.category as RouteTicketResult["category"]) &&
-      parsed.reason.trim().length > 0
-    ) {
-      return {
-        assignee: parsed.assignee as RouteTicketResult["assignee"],
-        category: parsed.category as RouteTicketResult["category"],
-        reason: parsed.reason.trim(),
-      } satisfies Omit<RouteTicketResult, "source">;
+    const parsed: unknown = JSON.parse(responseText);
+    if (!parsed || typeof parsed !== "object") return null;
+
+    const obj = parsed as Record<string, unknown>;
+    const assignee = obj.assignee;
+    const category = obj.category;
+    const reason = obj.reason;
+
+    if (typeof assignee !== "string" || typeof category !== "string" || typeof reason !== "string") {
+      return null;
     }
-  } catch (error) {
+
+    if (!ASSIGNEE_VALUES.has(assignee as RouteTicketResult["assignee"])) return null;
+    if (!CATEGORY_VALUES.has(category as RouteTicketResult["category"])) return null;
+
+    const cleanedReason = reason.trim();
+    if (!cleanedReason) return null;
+
+    return {
+      assignee: assignee as RouteTicketResult["assignee"],
+      category: category as RouteTicketResult["category"],
+      reason: cleanedReason,
+    };
+  } catch (error: unknown) {
     console.error("Failed to parse routing response", error);
+    return null;
   }
-  return null;
 }
 
 export async function routeTicket(title: string, description: string): Promise<RouteTicketResult> {
@@ -129,17 +171,13 @@ export async function routeTicket(title: string, description: string): Promise<R
 
   try {
     const responseText = await callOpenAi(userPrompt);
-    if (!responseText) {
-      return fallback;
-    }
+    if (!responseText) return fallback;
 
     const parsed = parseRoutingResponse(responseText);
-    if (!parsed) {
-      return fallback;
-    }
+    if (!parsed) return fallback;
 
-    return { ...parsed, source: "ai" } satisfies RouteTicketResult;
-  } catch (error) {
+    return { ...parsed, source: "ai" };
+  } catch (error: unknown) {
     console.error("Failed to route ticket via LLM", error);
     return fallback;
   }

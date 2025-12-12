@@ -19,7 +19,7 @@ export type CurrentUser = {
     firstName: string;
     middleName: string | null;
     lastName: string;
-    phone: string;
+    phone: string | null;
     email: string | null;
     address: string | null;
     city: string | null;
