@@ -94,3 +94,29 @@ export async function POST(request: Request, { params }: CaregiverRouteContext) 
 
   return NextResponse.json({ id: caregiver.id });
 }
+
+export async function DELETE(_request: Request, { params }: CaregiverRouteContext) {
+  const { id } = await params;
+
+  if (!id) {
+    return NextResponse.json({ error: "Missing caregiver id" }, { status: 400 });
+  }
+
+  try {
+    await requireApiUserRole("admin");
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const caregiver = await prisma.caregiver.update({
+      where: { id },
+      data: { status: "inactive", isActive: false },
+    });
+
+    return NextResponse.json({ id: caregiver.id });
+  } catch (error: unknown) {
+    console.error("Failed to deactivate caregiver", error);
+    return NextResponse.json({ error: "Unable to deactivate caregiver" }, { status: 500 });
+  }
+}
