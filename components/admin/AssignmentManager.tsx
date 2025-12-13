@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 
-import CaregiverScheduleCalendar from "@/components/admin/CaregiverScheduleCalendar";
+import CaregiverWeeklyScheduleCalendar from "@/components/admin/CaregiverWeeklyScheduleCalendar";
 
 type ClientOption = {
   id: string;
@@ -519,7 +519,11 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
         </div>
       </section>
 
-      <CaregiverScheduleCalendar caregivers={caregivers} selectedClientId={selectedClientId} />
+      <CaregiverWeeklyScheduleCalendar
+        caregivers={caregivers}
+        clients={clients}
+        selectedClientId={selectedClientId}
+      />
     </main>
   );
 }
