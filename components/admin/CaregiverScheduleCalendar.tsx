@@ -10,7 +10,7 @@ import {
   setMinutes,
   startOfWeek,
 } from "date-fns";
-import { TrashIcon } from "@heroicons/react/24/outline";
+import { Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -369,7 +369,7 @@ export default function CaregiverScheduleCalendar({ caregivers, selectedClientId
                                 className="rounded p-1 text-red-600 hover:bg-red-50 dark:text-red-200 dark:hover:bg-red-900/40"
                                 aria-label="Delete visit"
                               >
-                                <TrashIcon className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4" />
                               </button>
                             </div>
                             <div className="text-[10px] text-slate-700 dark:text-slate-200">
