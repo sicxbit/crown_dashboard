@@ -19,6 +19,17 @@ function parseSessionRequestBody(value: unknown): SessionRequestBody | null {
   return { idToken: obj.idToken };
 }
 
+function getAdminAllowlist(): Set<string> {
+  const raw = process.env.ADMIN_EMAILS;
+  if (!raw) return new Set();
+  return new Set(
+    raw
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean)
+  );
+}
+
 export async function POST(request: Request) {
   try {
     const raw: unknown = await request.json().catch(() => null);
@@ -34,8 +45,10 @@ export async function POST(request: Request) {
     const decoded = await auth.verifyIdToken(idToken);
 
     const firebaseUid = decoded.uid;
-    const email = decoded.email ?? null;
+    const email = decoded.email ? decoded.email.toLowerCase() : null;
     const phoneNumber = decoded.phone_number ?? null;
+
+    const adminAllowlist = getAdminAllowlist();
 
     // 1) Try to find existing user by firebaseUid
     let user = await prisma.user.findUnique({
@@ -57,7 +70,7 @@ export async function POST(request: Request) {
     // 3) If still no user, create one
     if (!user) {
       if (phoneNumber) {
-        // Caregiver flow: match a caregiver record by phone
+        // Caregiver flow: match caregiver by phone
         const caregiver = await prisma.caregiver.findFirst({
           where: { phone: phoneNumber },
         });
@@ -78,7 +91,14 @@ export async function POST(request: Request) {
           },
         });
       } else if (email) {
-        // Admin flow (email-based)
+        // 🔒 Admin flow — ENV allowlist enforced
+        if (!adminAllowlist.has(email)) {
+          return NextResponse.json(
+            { error: "Access denied: not authorized as admin." },
+            { status: 403 }
+          );
+        }
+
         user = await prisma.user.create({
           data: {
             firebaseUid,
@@ -93,7 +113,7 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      // 4) User existed: keep email up to date
+      // 4) Existing user: sync email
       if (email && user.email !== email) {
         user = await prisma.user.update({
           where: { id: user.id },
@@ -101,7 +121,19 @@ export async function POST(request: Request) {
         });
       }
 
-      // If phone exists and user isn't linked to caregiver, try auto-link
+      // Prevent silent privilege escalation
+      if (
+        user.role === "admin" &&
+        email &&
+        !adminAllowlist.has(email)
+      ) {
+        return NextResponse.json(
+          { error: "Admin access revoked by policy." },
+          { status: 403 }
+        );
+      }
+
+      // Auto-link caregiver if phone matches
       if (phoneNumber && !user.caregiverId) {
         const caregiver = await prisma.caregiver.findFirst({
           where: { phone: phoneNumber },
