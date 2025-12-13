@@ -68,6 +68,7 @@ model Client {
   servicePlans       ServicePlan[]
   visitLogs          VisitLog[]
   incidents          Incident[]
+  scheduleRules      ScheduleRule[]
 
   @@map("clients")
 }
@@ -110,8 +111,31 @@ model Caregiver {
   training       TrainingRecord[]
   visitLogs      VisitLog[]
   incidents      Incident[]
+  scheduleRules  ScheduleRule[]
 
   @@map("caregivers")
+}
+
+model ScheduleRule {
+  id                 String    @id @default(uuid())
+  clientId           String    @map("client_id")
+  caregiverId        String    @map("caregiver_id")
+  dayOfWeek          Int       @map("day_of_week") // 0=Sun..6=Sat
+  startTimeMinutes   Int       @map("start_time_minutes") // minutes from midnight
+  endTimeMinutes     Int       @map("end_time_minutes")
+  effectiveStartDate DateTime  @map("effective_start_date") // date-only semantics (store midnight)
+  effectiveEndDate   DateTime? @map("effective_end_date")
+  serviceCode        String?   @map("service_code")
+  notes              String?   @map("notes")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  client    Client    @relation(fields: [clientId], references: [id])
+  caregiver Caregiver @relation(fields: [caregiverId], references: [id])
+
+  @@index([clientId, dayOfWeek], map: "idx_schedule_rules_client_day")
+  @@index([caregiverId, dayOfWeek], map: "idx_schedule_rules_caregiver_day")
+  @@map("schedule_rules")
 }
 
 model CaregiverAssignment {
