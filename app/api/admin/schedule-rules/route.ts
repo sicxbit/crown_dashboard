@@ -131,7 +131,7 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json({ events });
+    return NextResponse.json(events);
   } catch (error: unknown) {
     console.error("Failed to load schedule rules", error);
     return NextResponse.json({ error: "Unable to load schedule rules" }, { status: 500 });

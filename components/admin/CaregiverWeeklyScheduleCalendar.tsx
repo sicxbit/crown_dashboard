@@ -37,9 +37,7 @@ type ScheduleRuleEvent = {
   notes: string | null;
 };
 
-type ApiScheduleResponse = {
-  events: ScheduleRuleEvent[];
-};
+type ApiScheduleResponse = ScheduleRuleEvent[];
 
 type Props = {
   caregivers: CaregiverOption[];
@@ -52,7 +50,7 @@ const hoursEnd = 22;
 const slotHeight = 32;
 
 function isScheduleResponse(value: unknown): value is ApiScheduleResponse {
-  return Boolean(value && typeof value === "object" && "events" in value);
+  return Array.isArray(value);
 }
 
 function extractApiError(value: unknown): string | null {
@@ -133,11 +131,11 @@ export default function CaregiverWeeklyScheduleCalendar({ caregivers, clients, s
         }
 
         const json: unknown = await response.json().catch(() => null);
-        if (!isScheduleResponse(json) || !Array.isArray(json.events)) {
+        if (!isScheduleResponse(json)) {
           throw new Error("Invalid schedule response");
         }
 
-        setEvents(json.events);
+        setEvents(json);
       } catch (err: unknown) {
         if (signal?.aborted) return;
         console.error(err);

@@ -120,10 +120,10 @@ model ScheduleRule {
   id                 String    @id @default(uuid())
   clientId           String    @map("client_id")
   caregiverId        String    @map("caregiver_id")
-  dayOfWeek          Int       @map("day_of_week") // 0=Sun..6=Sat
-  startTimeMinutes   Int       @map("start_time_minutes") // minutes from midnight
+  dayOfWeek          Int       @map("day_of_week") // 0=Sun .. 6=Sat
+  startTimeMinutes   Int       @map("start_time_minutes")
   endTimeMinutes     Int       @map("end_time_minutes")
-  effectiveStartDate DateTime  @map("effective_start_date") // date-only semantics (store midnight)
+  effectiveStartDate DateTime  @map("effective_start_date")
   effectiveEndDate   DateTime? @map("effective_end_date")
   serviceCode        String?   @map("service_code")
   notes              String?   @map("notes")
