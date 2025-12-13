@@ -1,4 +1,5 @@
 import { addDays, addMinutes, endOfDay, startOfDay, startOfWeek } from "date-fns";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { requireApiUserRole } from "@/lib/auth";
@@ -15,6 +16,13 @@ type ScheduleRuleEvent = {
   serviceCode: string | null;
   notes: string | null;
 };
+
+type ScheduleRuleWithRelations = Prisma.ScheduleRuleGetPayload<{
+  include: {
+    client: { select: { firstName: true; lastName: true } };
+    caregiver: { select: { firstName: true; middleName: true; lastName: true } };
+  };
+}>;
 
 type CreateScheduleRuleBody = {
   clientId?: unknown;
@@ -64,6 +72,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const db: PrismaClient = prisma;
+
   const { searchParams } = new URL(request.url);
   const weekStartParam = searchParams.get("weekStart");
   const dayIndexParam = searchParams.get("dayIndex");
@@ -92,7 +102,7 @@ export async function GET(request: Request) {
   const dayOfWeek = dayStart.getDay();
 
   try {
-    const rules = await prisma.scheduleRule.findMany({
+    const findManyArgs: Prisma.ScheduleRuleFindManyArgs = {
       where: {
         dayOfWeek,
         effectiveStartDate: { lte: dayEnd },
@@ -108,7 +118,9 @@ export async function GET(request: Request) {
         caregiver: { select: { firstName: true, middleName: true, lastName: true } },
       },
       orderBy: { startTimeMinutes: "asc" },
-    });
+    };
+
+    const rules: ScheduleRuleWithRelations[] = await db.scheduleRule.findMany(findManyArgs);
 
     const events: ScheduleRuleEvent[] = rules.map((rule) => {
       const startDateTime = addMinutes(dayStart, rule.startTimeMinutes);
@@ -144,6 +156,8 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const db: PrismaClient = prisma;
 
   const rawBody: unknown = await request.json().catch(() => null);
   const {
@@ -202,7 +216,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const rule = await prisma.scheduleRule.create({
+    const rule = await db.scheduleRule.create({
       data: {
         clientId,
         caregiverId,
