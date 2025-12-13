@@ -219,6 +219,36 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
     }
   }
 
+  async function doDeleteAssignment(assignmentId: string) {
+    if (!selectedClientId) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this assignment? This action cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    setError(null);
+    setSuccessMessage(null);
+    setAssignments((prev) => prev.filter((assignment) => assignment.id !== assignmentId));
+
+    try {
+      const response = await fetch(`/api/admin/assignments/${assignmentId}`, { method: "DELETE" });
+
+      if (!response.ok) {
+        const json: unknown = await response.json().catch(() => null);
+        const apiError = getApiErrorMessage(json);
+        throw new Error(apiError ?? "Unable to delete assignment");
+      }
+
+      setSuccessMessage("Assignment deleted.");
+      await loadAssignments(selectedClientId);
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Unable to delete assignment");
+    }
+  }
+
   return (
     <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 p-6">
       <header className="flex flex-col gap-2">
@@ -359,31 +389,42 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                           )}
                         </td>
                         <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{assignment.notes ?? ""}</td>
-                        <td className="px-4 py-3 space-x-2 text-right">
-                          {isActive && (
-                            <>
-                              {!assignment.isPrimary && (
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex justify-end gap-2">
+                            {isActive && (
+                              <>
+                                {!assignment.isPrimary && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      void doMakePrimary(assignment.id);
+                                    }}
+                                    className="rounded-md border border-emerald-300 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+                                  >
+                                    Make Primary
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    void doMakePrimary(assignment.id);
+                                    void doEndAssignment(assignment.id);
                                   }}
-                                  className="rounded-md border border-emerald-300 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+                                  className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                                 >
-                                  Make Primary
+                                  End Today
                                 </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  void doEndAssignment(assignment.id);
-                                }}
-                                className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                              >
-                                End Today
-                              </button>
-                            </>
-                          )}
+                              </>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void doDeleteAssignment(assignment.id);
+                              }}
+                              className="rounded-md border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

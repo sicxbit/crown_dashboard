@@ -129,6 +129,8 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, startTransition] = useTransition();
+  const [showInactiveClients, setShowInactiveClients] = useState(false);
+  const [showInactiveCaregivers, setShowInactiveCaregivers] = useState(false);
 
   const sortedClients = useMemo(
     () =>
@@ -144,6 +146,17 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
         `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)
       ),
     [caregivers]
+  );
+
+  const visibleClients = useMemo(
+    () => sortedClients.filter((client) => showInactiveClients || client.status !== "inactive"),
+    [sortedClients, showInactiveClients]
+  );
+
+  const visibleCaregivers = useMemo(
+    () =>
+      sortedCaregivers.filter((caregiver) => showInactiveCaregivers || caregiver.status !== "inactive"),
+    [sortedCaregivers, showInactiveCaregivers]
   );
 
   function refresh() {
@@ -246,6 +259,70 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
     }
   }
 
+  async function handleClientDelete(clientId: string) {
+    const confirmed = window.confirm(
+      "This will archive the client. All visit history is preserved."
+    );
+
+    if (!confirmed) return;
+
+    setError(null);
+    setIsSaving(true);
+
+    try {
+      const response = await fetch(`/api/admin/clients/${clientId}`, { method: "DELETE" });
+
+      if (!response.ok) {
+        const json: unknown = await response.json().catch(() => null);
+        const apiError = getApiErrorMessage(json);
+        throw new Error(apiError ?? "Unable to archive client");
+      }
+
+      if (editingClient?.id === clientId) {
+        setEditingClient(null);
+      }
+
+      refresh();
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Unable to archive client");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleCaregiverDelete(caregiverId: string) {
+    const confirmed = window.confirm(
+      "This will deactivate the caregiver and remove them from future assignments. Past visits are preserved."
+    );
+
+    if (!confirmed) return;
+
+    setError(null);
+    setIsSaving(true);
+
+    try {
+      const response = await fetch(`/api/admin/caregivers/${caregiverId}`, { method: "DELETE" });
+
+      if (!response.ok) {
+        const json: unknown = await response.json().catch(() => null);
+        const apiError = getApiErrorMessage(json);
+        throw new Error(apiError ?? "Unable to deactivate caregiver");
+      }
+
+      if (editingCaregiver?.id === caregiverId) {
+        setEditingCaregiver(null);
+      }
+
+      refresh();
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Unable to deactivate caregiver");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   return (
     <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 p-6">
       <header className="flex flex-col gap-2">
@@ -265,16 +342,27 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
                 Click a client row to view and edit details.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setEditingClient(createEmptyClient());
-                setError(null);
-              }}
-              className="rounded-md bg-brand-600 px-3 py-2 text-xs font-medium text-white hover:bg-brand-700"
-            >
-              + New Client
-            </button>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={showInactiveClients}
+                  onChange={(event) => setShowInactiveClients(event.target.checked)}
+                  className="accent-brand-600"
+                />
+                Show inactive
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingClient(createEmptyClient());
+                  setError(null);
+                }}
+                className="rounded-md bg-brand-600 px-3 py-2 text-xs font-medium text-white hover:bg-brand-700"
+              >
+                + New Client
+              </button>
+            </div>
           </div>
 
           <div className="max-h-[480px] overflow-y-auto">
@@ -287,10 +375,11 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Risk</th>
                   <th className="px-4 py-3">Primary Caregiver</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
-                {sortedClients.map((client) => (
+                {visibleClients.map((client) => (
                   <tr
                     key={client.id}
                     className="cursor-pointer transition hover:bg-brand-50 dark:hover:bg-brand-900/30"
@@ -315,6 +404,18 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {client.primaryCaregiver ?? "Unassigned"}
                     </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void handleClientDelete(client.id);
+                        }}
+                        className="rounded-md border border-red-300 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
+                      >
+                        Archive
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -331,16 +432,27 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
                 Review staffing readiness and compliance status.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setEditingCaregiver(createEmptyCaregiver());
-                setError(null);
-              }}
-              className="rounded-md bg-brand-600 px-3 py-2 text-xs font-medium text-white hover:bg-brand-700"
-            >
-              + New Caregiver
-            </button>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={showInactiveCaregivers}
+                  onChange={(event) => setShowInactiveCaregivers(event.target.checked)}
+                  className="accent-brand-600"
+                />
+                Show inactive
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingCaregiver(createEmptyCaregiver());
+                  setError(null);
+                }}
+                className="rounded-md bg-brand-600 px-3 py-2 text-xs font-medium text-white hover:bg-brand-700"
+              >
+                + New Caregiver
+              </button>
+            </div>
           </div>
 
           <div className="max-h-[480px] overflow-y-auto">
@@ -353,10 +465,11 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Sandata EVV ID</th>
                   <th className="px-4 py-3">Compliance</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
-                {sortedCaregivers.map((caregiver) => (
+                {visibleCaregivers.map((caregiver) => (
                   <tr
                     key={caregiver.id}
                     className="cursor-pointer transition hover:bg-brand-50 dark:hover:bg-brand-900/30"
@@ -384,6 +497,18 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {caregiver.complianceSummary}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void handleCaregiverDelete(caregiver.id);
+                        }}
+                        className="rounded-md border border-red-300 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
+                      >
+                        Deactivate
+                      </button>
                     </td>
                   </tr>
                 ))}

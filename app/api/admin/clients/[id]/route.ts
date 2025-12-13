@@ -132,3 +132,29 @@ export async function POST(request: Request, { params }: ClientRouteContext) {
 
   return NextResponse.json({ id: client.id });
 }
+
+export async function DELETE(_request: Request, { params }: ClientRouteContext) {
+  const { id } = await params;
+
+  if (!id) {
+    return NextResponse.json({ error: "Missing client id" }, { status: 400 });
+  }
+
+  try {
+    await requireApiUserRole("admin");
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const client = await prisma.client.update({
+      where: { id },
+      data: { status: "inactive" },
+    });
+
+    return NextResponse.json({ id: client.id });
+  } catch (error: unknown) {
+    console.error("Failed to archive client", error);
+    return NextResponse.json({ error: "Unable to archive client" }, { status: 500 });
+  }
+}
