@@ -79,7 +79,7 @@ function parseNullableDate(value: string | null | undefined, fieldName: string):
 }
 
 export async function POST(request: Request, { params }: ClientRouteContext) {
-  const { id } = await params; // Next 15 params promise
+  const { id } = await params;
 
   try {
     await requireApiUserRole("admin");
@@ -133,7 +133,7 @@ export async function POST(request: Request, { params }: ClientRouteContext) {
   return NextResponse.json({ id: client.id });
 }
 
-export async function DELETE(_request: Request, { params }: ClientRouteContext) {
+export async function DELETE(request: Request, { params }: ClientRouteContext) {
   const { id } = await params;
 
   if (!id) {
@@ -146,15 +146,74 @@ export async function DELETE(_request: Request, { params }: ClientRouteContext) 
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const url = new URL(request.url);
+  const purge = url.searchParams.get("purge") === "1";
+
+  // Default behavior: archive (soft delete)
+  if (!purge) {
+    try {
+      const client = await prisma.client.update({
+        where: { id },
+        data: { status: "inactive" },
+      });
+
+      return NextResponse.json({ id: client.id });
+    } catch (error: unknown) {
+      console.error("Failed to archive client", error);
+      return NextResponse.json({ error: "Unable to archive client" }, { status: 500 });
+    }
+  }
+
+  // Purge behavior: permanent delete (safe-mode: refuse if dependencies exist)
   try {
-    const client = await prisma.client.update({
+    const client = await prisma.client.findUnique({
       where: { id },
-      data: { status: "inactive" },
+      select: { id: true, status: true },
     });
 
-    return NextResponse.json({ id: client.id });
+    if (!client) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    }
+
+    if (client.status.toLowerCase() !== "inactive") {
+      return NextResponse.json({ error: "Only archived clients can be deleted permanently" }, { status: 400 });
+    }
+
+    const [
+      assignments,
+      assessments,
+      servicePlans,
+      visitLogs,
+      incidents,
+      scheduleRules,
+    ] = await Promise.all([
+      prisma.caregiverAssignment.count({ where: { clientId: id } }),
+      prisma.assessment.count({ where: { clientId: id } }),
+      prisma.servicePlan.count({ where: { clientId: id } }),
+      prisma.visitLog.count({ where: { clientId: id } }),
+      prisma.incident.count({ where: { clientId: id } }),
+      prisma.scheduleRule.count({ where: { clientId: id } }),
+    ]);
+
+    const blockers: string[] = [];
+    if (assignments > 0) blockers.push("assignments");
+    if (scheduleRules > 0) blockers.push("schedule rules");
+    if (visitLogs > 0) blockers.push("visit logs");
+    if (incidents > 0) blockers.push("incidents");
+    if (assessments > 0) blockers.push("assessments");
+    if (servicePlans > 0) blockers.push("service plans");
+
+    if (blockers.length > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete permanently. Remove related data first: ${blockers.join(", ")}.` },
+        { status: 400 }
+      );
+    }
+
+    await prisma.client.delete({ where: { id } });
+    return NextResponse.json({ id });
   } catch (error: unknown) {
-    console.error("Failed to archive client", error);
-    return NextResponse.json({ error: "Unable to archive client" }, { status: 500 });
+    console.error("Failed to purge client", error);
+    return NextResponse.json({ error: "Unable to delete client permanently" }, { status: 500 });
   }
 }

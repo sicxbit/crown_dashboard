@@ -1,27 +1,25 @@
-import type { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
-
 import { requireApiUserRole } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
-type Params = { params: { id?: string } };
-
-export async function DELETE(_request: Request, context: Params) {
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     await requireApiUserRole("admin");
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const db: PrismaClient = prisma;
+  const { id } = await params;
 
-  const ruleId = context.params.id;
-  if (!ruleId) {
+  if (!id) {
     return NextResponse.json({ error: "Missing schedule rule id" }, { status: 400 });
   }
 
   try {
-    await db.scheduleRule.delete({ where: { id: ruleId } });
+    await prisma.scheduleRule.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     console.error("Failed to delete schedule rule", error);

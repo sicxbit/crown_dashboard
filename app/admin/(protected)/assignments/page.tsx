@@ -4,6 +4,7 @@ import AssignmentManager from "@/components/admin/AssignmentManager";
 export default async function AssignmentsPage() {
   const [clients, caregivers] = await Promise.all([
     prisma.client.findMany({
+      where: { status: "active" },
       orderBy: { lastName: "asc" },
       select: {
         id: true,

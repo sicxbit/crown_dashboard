@@ -106,6 +106,8 @@ export default function CaregiverWeeklyScheduleCalendar({ caregivers, clients, s
     () => Array.from({ length: (hoursEnd - hoursStart) * 2 + 1 }, (_, index) => addMinutes(timeWindowStart, index * 30)),
     [timeWindowStart]
   );
+  const slotCount = timeSlots.length - 1; // number of 30-min intervals
+  const gridHeight = slotHeight * slotCount;
 
   const refreshSchedule = useCallback(
     async (signal?: AbortSignal) => {
@@ -542,10 +544,18 @@ export default function CaregiverWeeklyScheduleCalendar({ caregivers, clients, s
         <div className="overflow-x-auto">
           <div
             className="grid gap-2"
-            style={{ gridTemplateColumns: `100px repeat(${Math.max(caregiverColumns.length, 1)}, minmax(220px, 1fr))` }}
+            style={{
+              gridTemplateColumns: `100px repeat(${Math.max(
+                caregiverColumns.length,
+                1
+              )}, minmax(220px, 1fr))`,
+            }}
           >
-            <div className="relative" style={{ height: slotHeight * timeSlots.length }}>
-              {timeSlots.map((slot, index) => (
+            {/* Time labels: render interval rows only */}
+        
+
+            <div className="relative" style={{ height: gridHeight }}>
+              {timeSlots.slice(0, -1).map((slot, index) => (
                 <div
                   key={slot.toISOString()}
                   className="flex h-8 items-start justify-end pr-2 text-xs text-slate-500 dark:text-slate-300"
@@ -558,16 +568,21 @@ export default function CaregiverWeeklyScheduleCalendar({ caregivers, clients, s
             {caregiverColumns.map((caregiver) => {
               const positions = computePositions(caregiver.id);
               return (
-                <div key={caregiver.id} className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
+                <div
+                  key={caregiver.id}
+                  className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900"
+                >
                   <div className="border-b border-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 dark:border-slate-800 dark:text-slate-100">
                     {caregiver.name}
                   </div>
-                  <div className="relative" style={{ height: slotHeight * timeSlots.length }}>
-                    {timeSlots.slice(1).map((slot, index) => (
+
+                  <div className="relative" style={{ height: gridHeight }}>
+                    {/* Dashed lines at each interval boundary (excluding top and bottom) */}
+                    {timeSlots.slice(1, -1).map((slot, index) => (
                       <div
                         key={`${caregiver.id}-${slot.toISOString()}`}
                         className="absolute left-0 right-0 border-t border-dashed border-slate-200 dark:border-slate-700/60"
-                        style={{ top: `${((index + 1) / timeSlots.length) * 100}%` }}
+                        style={{ top: `${((index + 1) / slotCount) * 100}%` }}
                         aria-hidden
                       />
                     ))}
@@ -592,11 +607,23 @@ export default function CaregiverWeeklyScheduleCalendar({ caregivers, clients, s
                             left: `${(100 / entry.laneCount) * entry.lane}%`,
                           }}
                         >
-                          <div className="flex h-full flex-col justify-between rounded-md border border-brand-200 bg-brand-50 px-2 py-1 text-[11px] text-brand-900 shadow-sm dark:border-brand-800 dark:bg-brand-900/40 dark:text-brand-50"
-                            title={`${entry.event.clientName} • ${format(new Date(entry.event.scheduledStart), "HH:mm")} – ${format(new Date(entry.event.scheduledEnd), "HH:mm")}${entry.event.serviceCode ? ` • ${entry.event.serviceCode}` : ""}`}
+                          <div
+                            className="flex h-full flex-col justify-between rounded-md border border-brand-200 bg-brand-50 px-2 py-1 text-[11px] text-brand-900 shadow-sm dark:border-brand-800 dark:bg-brand-900/40 dark:text-brand-50"
+                            title={`${entry.event.clientName} • ${format(
+                              new Date(entry.event.scheduledStart),
+                              "HH:mm"
+                            )} – ${format(
+                              new Date(entry.event.scheduledEnd),
+                              "HH:mm"
+                            )}${entry.event.serviceCode
+                              ? ` • ${entry.event.serviceCode}`
+                              : ""
+                              }`}
                           >
                             <div className="flex items-start justify-between gap-2">
-                              <div className="font-semibold leading-tight">{entry.event.clientName}</div>
+                              <div className="font-semibold leading-tight">
+                                {entry.event.clientName}
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => {
@@ -608,14 +635,26 @@ export default function CaregiverWeeklyScheduleCalendar({ caregivers, clients, s
                                 <Trash2 className="h-4 w-4" />
                               </button>
                             </div>
+
                             <div className="text-[10px] text-slate-700 dark:text-slate-200">
-                              {`${format(new Date(entry.event.scheduledStart), "HH:mm")} – ${format(new Date(entry.event.scheduledEnd), "HH:mm")}`}
+                              {`${format(
+                                new Date(entry.event.scheduledStart),
+                                "HH:mm"
+                              )} – ${format(
+                                new Date(entry.event.scheduledEnd),
+                                "HH:mm"
+                              )}`}
                             </div>
+
                             {entry.event.serviceCode && (
-                              <div className="text-[10px] text-slate-700 dark:text-slate-200">Service: {entry.event.serviceCode}</div>
+                              <div className="text-[10px] text-slate-700 dark:text-slate-200">
+                                Service: {entry.event.serviceCode}
+                              </div>
                             )}
                             {entry.event.notes && (
-                              <div className="text-[10px] text-slate-700 dark:text-slate-200">{entry.event.notes}</div>
+                              <div className="text-[10px] text-slate-700 dark:text-slate-200">
+                                {entry.event.notes}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -627,6 +666,7 @@ export default function CaregiverWeeklyScheduleCalendar({ caregivers, clients, s
             })}
           </div>
         </div>
+
       </div>
     </section>
   );

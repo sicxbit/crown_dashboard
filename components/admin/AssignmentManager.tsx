@@ -54,6 +54,7 @@ function isAssignmentsPayload(value: unknown): value is { assignments: Assignmen
 export default function AssignmentManager({ clients, caregivers }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(clients[0]?.id ?? null);
+  const [showWeeklySchedule, setShowWeeklySchedule] = useState(false);
 
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
@@ -519,11 +520,37 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
         </div>
       </section>
 
-      <CaregiverWeeklyScheduleCalendar
-        caregivers={caregivers}
-        clients={clients}
-        selectedClientId={selectedClientId}
-      />
+
+      <section className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <button
+          type="button"
+          onClick={() => setShowWeeklySchedule((prev) => !prev)}
+          className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left"
+        >
+          <div>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+              Weekly schedule (optional)
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-300">
+              Expand this panel if you need to review schedule rules or weekly coverage.
+            </p>
+          </div>
+          <span className="rounded-md border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">
+            {showWeeklySchedule ? "Hide" : "Show"}
+          </span>
+        </button>
+
+        {showWeeklySchedule && (
+          <div className="border-t border-slate-100 px-6 py-4 dark:border-slate-800">
+            <CaregiverWeeklyScheduleCalendar
+              caregivers={caregivers}
+              clients={clients}
+              selectedClientId={selectedClientId}
+            />
+          </div>
+        )}
+      </section>
+
     </main>
   );
 }

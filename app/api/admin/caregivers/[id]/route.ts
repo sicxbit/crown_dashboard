@@ -49,7 +49,7 @@ function parseCaregiverPayload(value: unknown): CaregiverPayload {
 }
 
 export async function POST(request: Request, { params }: CaregiverRouteContext) {
-  const { id } = await params; // Next 15 params promise
+  const { id } = await params;
 
   try {
     await requireApiUserRole("admin");
@@ -60,42 +60,50 @@ export async function POST(request: Request, { params }: CaregiverRouteContext) 
   const raw: unknown = await request.json().catch(() => null);
   const body = parseCaregiverPayload(raw);
 
-  if (!body.firstName || !body.lastName || !body.status) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  const data: Record<string, any> = {};
+
+  if (body.employeeCode !== undefined) data.employeeCode = body.employeeCode;
+  if (body.firstName !== undefined) data.firstName = body.firstName;
+  if (body.lastName !== undefined) data.lastName = body.lastName;
+  if (body.phone !== undefined) data.phone = body.phone;
+  if (body.email !== undefined) data.email = body.email;
+  if (body.addressLine1 !== undefined) data.address = body.addressLine1;
+  if (body.addressLine2 !== undefined) data.addressLine2 = body.addressLine2;
+  if (body.city !== undefined) data.city = body.city;
+  if (body.state !== undefined) data.state = body.state;
+  if (body.zip !== undefined) data.zip = body.zip;
+  if (body.sandataEvvId !== undefined) data.sandataEvvId = body.sandataEvvId;
+
+  if (body.dob !== undefined) {
+    if (body.dob === null || body.dob === "") {
+      data.dateOfBirth = null;
+    } else {
+      const d = new Date(body.dob);
+      if (Number.isNaN(d.getTime())) {
+        return NextResponse.json({ error: "Invalid dob" }, { status: 400 });
+      }
+      data.dateOfBirth = d;
+    }
   }
 
-  let parsedDob: Date | null = null;
-  if (body.dob) {
-    const d = new Date(body.dob);
-    if (Number.isNaN(d.getTime())) {
-      return NextResponse.json({ error: "Invalid dob" }, { status: 400 });
-    }
-    parsedDob = d;
+  if (body.status !== undefined) {
+    data.status = body.status;
+    data.isActive = body.status.toLowerCase() === "active";
+  }
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
   }
 
   const caregiver = await prisma.caregiver.update({
     where: { id },
-    data: {
-      employeeCode: body.employeeCode ?? null,
-      firstName: body.firstName,
-      lastName: body.lastName,
-      dateOfBirth: parsedDob,
-      phone: body.phone ?? null,
-      email: body.email ?? null,
-      address: body.addressLine1 ?? null,
-      addressLine2: body.addressLine2 ?? null,
-      city: body.city ?? null,
-      state: body.state ?? null,
-      zip: body.zip ?? null,
-      sandataEvvId: body.sandataEvvId ?? null,
-      status: body.status,
-    },
+    data,
   });
 
   return NextResponse.json({ id: caregiver.id });
 }
 
-export async function DELETE(_request: Request, { params }: CaregiverRouteContext) {
+export async function DELETE(request: Request, { params }: CaregiverRouteContext) {
   const { id } = await params;
 
   if (!id) {
@@ -108,15 +116,77 @@ export async function DELETE(_request: Request, { params }: CaregiverRouteContex
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const url = new URL(request.url);
+  const purge = url.searchParams.get("purge") === "1";
+
+  // Default behavior: archive (soft delete)
+  if (!purge) {
+    try {
+      const caregiver = await prisma.caregiver.update({
+        where: { id },
+        data: { status: "inactive", isActive: false },
+      });
+
+      return NextResponse.json({ id: caregiver.id });
+    } catch (error: unknown) {
+      console.error("Failed to archive caregiver", error);
+      return NextResponse.json({ error: "Unable to archive caregiver" }, { status: 500 });
+    }
+  }
+
+  // Purge behavior: permanent delete (safe-mode: refuse if dependencies exist)
   try {
-    const caregiver = await prisma.caregiver.update({
+    const caregiver = await prisma.caregiver.findUnique({
       where: { id },
-      data: { status: "inactive", isActive: false },
+      select: { id: true, status: true },
     });
 
-    return NextResponse.json({ id: caregiver.id });
+    if (!caregiver) {
+      return NextResponse.json({ error: "Caregiver not found" }, { status: 404 });
+    }
+
+    if (caregiver.status.toLowerCase() !== "inactive") {
+      return NextResponse.json({ error: "Only archived caregivers can be deleted permanently" }, { status: 400 });
+    }
+
+    const [
+      assignments,
+      compliance,
+      training,
+      visitLogs,
+      incidents,
+      scheduleRules,
+      linkedUsers,
+    ] = await Promise.all([
+      prisma.caregiverAssignment.count({ where: { caregiverId: id } }),
+      prisma.complianceItem.count({ where: { caregiverId: id } }),
+      prisma.trainingRecord.count({ where: { caregiverId: id } }),
+      prisma.visitLog.count({ where: { caregiverId: id } }),
+      prisma.incident.count({ where: { caregiverId: id } }),
+      prisma.scheduleRule.count({ where: { caregiverId: id } }),
+      prisma.user.count({ where: { caregiverId: id } }),
+    ]);
+
+    const blockers: string[] = [];
+    if (linkedUsers > 0) blockers.push("linked user account");
+    if (assignments > 0) blockers.push("assignments");
+    if (scheduleRules > 0) blockers.push("schedule rules");
+    if (visitLogs > 0) blockers.push("visit logs");
+    if (incidents > 0) blockers.push("incidents");
+    if (compliance > 0) blockers.push("compliance items");
+    if (training > 0) blockers.push("training records");
+
+    if (blockers.length > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete permanently. Remove related data first: ${blockers.join(", ")}.` },
+        { status: 400 }
+      );
+    }
+
+    await prisma.caregiver.delete({ where: { id } });
+    return NextResponse.json({ id });
   } catch (error: unknown) {
-    console.error("Failed to deactivate caregiver", error);
-    return NextResponse.json({ error: "Unable to deactivate caregiver" }, { status: 500 });
+    console.error("Failed to purge caregiver", error);
+    return NextResponse.json({ error: "Unable to delete caregiver permanently" }, { status: 500 });
   }
 }

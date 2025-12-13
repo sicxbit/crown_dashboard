@@ -1,5 +1,4 @@
 import { addDays, addMinutes, endOfDay, startOfDay, startOfWeek } from "date-fns";
-import type { Prisma, PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { requireApiUserRole } from "@/lib/auth";
@@ -16,13 +15,6 @@ type ScheduleRuleEvent = {
   serviceCode: string | null;
   notes: string | null;
 };
-
-type ScheduleRuleWithRelations = Prisma.ScheduleRuleGetPayload<{
-  include: {
-    client: { select: { firstName: true; lastName: true } };
-    caregiver: { select: { firstName: true; middleName: true; lastName: true } };
-  };
-}>;
 
 type CreateScheduleRuleBody = {
   clientId?: unknown;
@@ -62,7 +54,9 @@ function parseDateOnly(value: unknown): Date | null {
 }
 
 function buildPersonName(firstName: string, middleName: string | null, lastName: string): string {
-  return [firstName, middleName, lastName].filter((part) => !!part && part.trim().length > 0).join(" ");
+  return [firstName, middleName, lastName]
+    .filter((part) => !!part && part.trim().length > 0)
+    .join(" ");
 }
 
 export async function GET(request: Request) {
@@ -71,8 +65,6 @@ export async function GET(request: Request) {
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const db: PrismaClient = prisma;
 
   const { searchParams } = new URL(request.url);
   const weekStartParam = searchParams.get("weekStart");
@@ -102,14 +94,11 @@ export async function GET(request: Request) {
   const dayOfWeek = dayStart.getDay();
 
   try {
-    const findManyArgs: Prisma.ScheduleRuleFindManyArgs = {
+    const rules = await prisma.scheduleRule.findMany({
       where: {
         dayOfWeek,
         effectiveStartDate: { lte: dayEnd },
-        OR: [
-          { effectiveEndDate: null },
-          { effectiveEndDate: { gte: dayStart } },
-        ],
+        OR: [{ effectiveEndDate: null }, { effectiveEndDate: { gte: dayStart } }],
         ...(clientId ? { clientId } : {}),
         ...(caregiverId ? { caregiverId } : {}),
       },
@@ -118,9 +107,7 @@ export async function GET(request: Request) {
         caregiver: { select: { firstName: true, middleName: true, lastName: true } },
       },
       orderBy: { startTimeMinutes: "asc" },
-    };
-
-    const rules: ScheduleRuleWithRelations[] = await db.scheduleRule.findMany(findManyArgs);
+    });
 
     const events: ScheduleRuleEvent[] = rules.map((rule) => {
       const startDateTime = addMinutes(dayStart, rule.startTimeMinutes);
@@ -157,8 +144,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const db: PrismaClient = prisma;
-
   const rawBody: unknown = await request.json().catch(() => null);
   const {
     clientId,
@@ -180,8 +165,9 @@ export async function POST(request: Request) {
     typeof dayOfWeek === "number"
       ? dayOfWeek
       : typeof dayOfWeek === "string"
-        ? Number.parseInt(dayOfWeek, 10)
-        : Number.NaN;
+      ? Number.parseInt(dayOfWeek, 10)
+      : Number.NaN;
+
   if (Number.isNaN(parsedDayOfWeek) || parsedDayOfWeek < 0 || parsedDayOfWeek > 6) {
     return NextResponse.json({ error: "dayOfWeek must be between 0 and 6" }, { status: 400 });
   }
@@ -212,11 +198,14 @@ export async function POST(request: Request) {
   }
 
   if (parsedEffectiveEnd && parsedEffectiveEnd < parsedEffectiveStart) {
-    return NextResponse.json({ error: "effectiveEndDate cannot be before effectiveStartDate" }, { status: 400 });
+    return NextResponse.json(
+      { error: "effectiveEndDate cannot be before effectiveStartDate" },
+      { status: 400 }
+    );
   }
 
   try {
-    const rule = await db.scheduleRule.create({
+    const rule = await prisma.scheduleRule.create({
       data: {
         clientId,
         caregiverId,

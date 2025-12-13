@@ -260,10 +260,7 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
   }
 
   async function handleClientDelete(clientId: string) {
-    const confirmed = window.confirm(
-      "This will archive the client. All visit history is preserved."
-    );
-
+    const confirmed = window.confirm("This will archive the client. All visit history is preserved.");
     if (!confirmed) return;
 
     setError(null);
@@ -278,10 +275,7 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
         throw new Error(apiError ?? "Unable to archive client");
       }
 
-      if (editingClient?.id === clientId) {
-        setEditingClient(null);
-      }
-
+      if (editingClient?.id === clientId) setEditingClient(null);
       refresh();
     } catch (err: unknown) {
       console.error(err);
@@ -295,7 +289,6 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
     const confirmed = window.confirm(
       "This will deactivate the caregiver and remove them from future assignments. Past visits are preserved."
     );
-
     if (!confirmed) return;
 
     setError(null);
@@ -310,14 +303,69 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
         throw new Error(apiError ?? "Unable to deactivate caregiver");
       }
 
-      if (editingCaregiver?.id === caregiverId) {
-        setEditingCaregiver(null);
-      }
-
+      if (editingCaregiver?.id === caregiverId) setEditingCaregiver(null);
       refresh();
     } catch (err: unknown) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Unable to deactivate caregiver");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  // ✅ NEW: Permanent delete for archived data only
+  async function handleClientPurge(clientId: string) {
+    const confirmed = window.confirm(
+      "PERMANENT DELETE: This cannot be undone.\n\nThis will only work if the client has no related visits/assignments/etc."
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setIsSaving(true);
+
+    try {
+      const response = await fetch(`/api/admin/clients/${clientId}?purge=1`, { method: "DELETE" });
+
+      if (!response.ok) {
+        const json: unknown = await response.json().catch(() => null);
+        const apiError = getApiErrorMessage(json);
+        throw new Error(apiError ?? "Unable to delete client permanently");
+      }
+
+      if (editingClient?.id === clientId) setEditingClient(null);
+      refresh();
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Unable to delete client permanently");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  // ✅ NEW: Permanent delete for archived data only
+  async function handleCaregiverPurge(caregiverId: string) {
+    const confirmed = window.confirm(
+      "PERMANENT DELETE: This cannot be undone.\n\nThis will only work if the caregiver has no related visits/assignments/etc."
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setIsSaving(true);
+
+    try {
+      const response = await fetch(`/api/admin/caregivers/${caregiverId}?purge=1`, { method: "DELETE" });
+
+      if (!response.ok) {
+        const json: unknown = await response.json().catch(() => null);
+        const apiError = getApiErrorMessage(json);
+        throw new Error(apiError ?? "Unable to delete caregiver permanently");
+      }
+
+      if (editingCaregiver?.id === caregiverId) setEditingCaregiver(null);
+      refresh();
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Unable to delete caregiver permanently");
     } finally {
       setIsSaving(false);
     }
@@ -405,16 +453,29 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
                       {client.primaryCaregiver ?? "Unassigned"}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void handleClientDelete(client.id);
-                        }}
-                        className="rounded-md border border-red-300 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
-                      >
-                        Archive
-                      </button>
+                      {client.status === "inactive" ? (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleClientPurge(client.id);
+                          }}
+                          className="rounded-md border border-red-400 px-3 py-1 text-xs font-semibold text-red-800 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
+                        >
+                          Delete
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleClientDelete(client.id);
+                          }}
+                          className="rounded-md border border-red-300 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
+                        >
+                          Archive
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -499,16 +560,29 @@ export default function AdminDashboard({ clients, caregivers, referrals }: Props
                       {caregiver.complianceSummary}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void handleCaregiverDelete(caregiver.id);
-                        }}
-                        className="rounded-md border border-red-300 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
-                      >
-                        Deactivate
-                      </button>
+                      {caregiver.status === "inactive" ? (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleCaregiverPurge(caregiver.id);
+                          }}
+                          className="rounded-md border border-red-400 px-3 py-1 text-xs font-semibold text-red-800 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
+                        >
+                          Delete
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleCaregiverDelete(caregiver.id);
+                          }}
+                          className="rounded-md border border-red-300 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
+                        >
+                          Deactivate
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -584,7 +658,6 @@ function ClientEditModal({ client, referrals, onClose, onSave, isSaving }: Clien
         </div>
 
         <form className="mt-4 grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
-          {/* (rest of your form unchanged below) */}
           <div className="md:col-span-2">
             <label className={labelClasses}>Client Code</label>
             <input
@@ -744,12 +817,15 @@ function ClientEditModal({ client, referrals, onClose, onSave, isSaving }: Clien
           </div>
           <div>
             <label className={labelClasses}>Status</label>
-            <input
+            <select
               className={inputClasses}
-              value={form.status}
+              value={(form.status ?? "active").toLowerCase()}
               onChange={(event) => updateField("status", event.target.value)}
               required
-            />
+            >
+              <option value="active">active</option>
+              <option value="inactive">inactive</option>
+            </select>
           </div>
           <div className="md:col-span-2">
             <label className={labelClasses}>Notes</label>
@@ -921,12 +997,15 @@ function CaregiverEditModal({ caregiver, onClose, onSave, isSaving }: CaregiverM
           </div>
           <div className="md:col-span-2">
             <label className={labelClasses}>Status</label>
-            <input
+            <select
               className={inputClasses}
-              value={form.status}
+              value={(form.status ?? "active").toLowerCase()}
               onChange={(event) => updateField("status", event.target.value)}
               required
-            />
+            >
+              <option value="active">active</option>
+              <option value="inactive">inactive</option>
+            </select>
           </div>
           <div className="md:col-span-2 flex justify-end gap-2 pt-4">
             <button
