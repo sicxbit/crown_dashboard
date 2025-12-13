@@ -271,6 +271,9 @@ export default function CaregiverWeeklyScheduleCalendar({ caregivers, clients, s
       }
 
       setFormMessage("Schedule rule created.");
+      setServiceCode("");
+      setNotes("");
+      setEffectiveEndDate("");
       await refreshSchedule();
     } catch (err: unknown) {
       console.error(err);
@@ -589,7 +592,9 @@ export default function CaregiverWeeklyScheduleCalendar({ caregivers, clients, s
                             left: `${(100 / entry.laneCount) * entry.lane}%`,
                           }}
                         >
-                          <div className="flex h-full flex-col justify-between rounded-md border border-brand-200 bg-brand-50 px-2 py-1 text-[11px] text-brand-900 shadow-sm dark:border-brand-800 dark:bg-brand-900/40 dark:text-brand-50">
+                          <div className="flex h-full flex-col justify-between rounded-md border border-brand-200 bg-brand-50 px-2 py-1 text-[11px] text-brand-900 shadow-sm dark:border-brand-800 dark:bg-brand-900/40 dark:text-brand-50"
+                            title={`${entry.event.clientName} • ${format(new Date(entry.event.scheduledStart), "HH:mm")} – ${format(new Date(entry.event.scheduledEnd), "HH:mm")}${entry.event.serviceCode ? ` • ${entry.event.serviceCode}` : ""}`}
+                          >
                             <div className="flex items-start justify-between gap-2">
                               <div className="font-semibold leading-tight">{entry.event.clientName}</div>
                               <button
