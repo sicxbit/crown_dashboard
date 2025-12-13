@@ -1,7 +1,13 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { format } from "date-fns";
+import {
+  addDays,
+  endOfWeek,
+  format,
+  isSameDay,
+  startOfWeek,
+} from "date-fns";
 
 type ClientOption = {
   id: string;
@@ -29,6 +35,14 @@ type Assignment = {
   notes: string | null;
 };
 
+type ScheduledVisit = {
+  id: string;
+  caregiverName: string;
+  scheduledStart: string | null;
+  scheduledEnd: string | null;
+  serviceCode: string | null;
+};
+
 type Props = {
   clients: ClientOption[];
   caregivers: CaregiverOption[];
@@ -49,12 +63,23 @@ function isAssignmentsPayload(value: unknown): value is { assignments: Assignmen
   return "assignments" in value;
 }
 
+function isSchedulePayload(value: unknown): value is { visits: ScheduledVisit[] } {
+  if (!value || typeof value !== "object") return false;
+  return "visits" in value;
+}
+
 export default function AssignmentManager({ clients, caregivers }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(clients[0]?.id ?? null);
 
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
+
+  const [scheduledVisits, setScheduledVisits] = useState<ScheduledVisit[]>([]);
+  const [loadingSchedule, setLoadingSchedule] = useState(false);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+
+  const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
 
   const [selectedCaregiverId, setSelectedCaregiverId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<string>("");
@@ -79,9 +104,9 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
   useEffect(() => {
     if (selectedClientId) {
       void loadAssignments(selectedClientId);
+      void loadSchedule(selectedClientId, weekStart);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedClientId]);
+  }, [selectedClientId, weekStart]);
 
   async function loadAssignments(clientId: string) {
     try {
@@ -111,6 +136,41 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
       setError(err instanceof Error ? err.message : "Unable to load assignments");
     } finally {
       setLoadingAssignments(false);
+    }
+  }
+
+  async function loadSchedule(clientId: string, startDate: Date) {
+    const rangeStart = startOfWeek(startDate);
+    const rangeEnd = endOfWeek(startDate);
+
+    try {
+      setLoadingSchedule(true);
+      setScheduleError(null);
+
+      const response = await fetch(
+        `/api/admin/schedule?clientId=${clientId}&start=${rangeStart.toISOString()}&end=${rangeEnd.toISOString()}`
+      );
+
+      if (!response.ok) {
+        const json: unknown = await response.json().catch(() => null);
+        const apiError = getApiErrorMessage(json);
+        throw new Error(apiError ?? "Unable to load scheduled visits");
+      }
+
+      const json: unknown = await response.json().catch(() => null);
+
+      if (!isSchedulePayload(json) || !Array.isArray(json.visits)) {
+        throw new Error("Invalid schedule response from server");
+      }
+
+      setScheduledVisits(json.visits);
+    } catch (err: unknown) {
+      console.error(err);
+      setScheduleError(
+        err instanceof Error ? err.message : "Unable to load scheduled visits"
+      );
+    } finally {
+      setLoadingSchedule(false);
     }
   }
 
@@ -216,6 +276,66 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
     } catch (err: unknown) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Unable to update primary assignment");
+    }
+  }
+
+  async function doDeleteAssignment(assignmentId: string) {
+    if (!selectedClientId) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this assignment? This action cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    setError(null);
+    setSuccessMessage(null);
+    setAssignments((prev) => prev.filter((assignment) => assignment.id !== assignmentId));
+
+    try {
+      const response = await fetch(`/api/admin/assignments/${assignmentId}`, { method: "DELETE" });
+
+      if (!response.ok) {
+        const json: unknown = await response.json().catch(() => null);
+        const apiError = getApiErrorMessage(json);
+        throw new Error(apiError ?? "Unable to delete assignment");
+      }
+
+      setSuccessMessage("Assignment deleted.");
+      await loadAssignments(selectedClientId);
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Unable to delete assignment");
+    }
+  }
+
+  async function doDeleteScheduledVisit(visitId: string) {
+    const confirmed = window.confirm(
+      "Delete this scheduled visit? This will remove it from the calendar."
+    );
+
+    if (!confirmed) return;
+
+    setScheduledVisits((prev) => prev.filter((visit) => visit.id !== visitId));
+
+    try {
+      const response = await fetch(`/api/admin/schedule/${visitId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const json: unknown = await response.json().catch(() => null);
+        const apiError = getApiErrorMessage(json);
+        throw new Error(apiError ?? "Unable to delete scheduled visit");
+      }
+    } catch (err: unknown) {
+      console.error(err);
+      setScheduleError(
+        err instanceof Error ? err.message : "Unable to delete scheduled visit"
+      );
+      if (selectedClientId) {
+        await loadSchedule(selectedClientId, weekStart);
+      }
     }
   }
 
@@ -359,31 +479,42 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
                           )}
                         </td>
                         <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{assignment.notes ?? ""}</td>
-                        <td className="px-4 py-3 space-x-2 text-right">
-                          {isActive && (
-                            <>
-                              {!assignment.isPrimary && (
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex justify-end gap-2">
+                            {isActive && (
+                              <>
+                                {!assignment.isPrimary && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      void doMakePrimary(assignment.id);
+                                    }}
+                                    className="rounded-md border border-emerald-300 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+                                  >
+                                    Make Primary
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    void doMakePrimary(assignment.id);
+                                    void doEndAssignment(assignment.id);
                                   }}
-                                  className="rounded-md border border-emerald-300 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+                                  className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                                 >
-                                  Make Primary
+                                  End Today
                                 </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  void doEndAssignment(assignment.id);
-                                }}
-                                className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                              >
-                                End Today
-                              </button>
-                            </>
-                          )}
+                              </>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void doDeleteAssignment(assignment.id);
+                              }}
+                              className="rounded-md border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -474,6 +605,119 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
               Save Assignment
             </button>
           </form>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white shadow transition-colors dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col gap-3 border-b border-slate-100 px-6 py-4 dark:border-slate-800 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Weekly Schedule</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-300">
+              Review scheduled caregiver visits for the selected client.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setWeekStart(addDays(weekStart, -7))}
+              className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Previous Week
+            </button>
+            <div className="rounded-md border border-slate-200 px-3 py-1 text-sm text-slate-700 dark:border-slate-700 dark:text-slate-200">
+              Week of {format(weekStart, "MMM d, yyyy")}
+            </div>
+            <button
+              type="button"
+              onClick={() => setWeekStart(addDays(weekStart, 7))}
+              className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Next Week
+            </button>
+          </div>
+        </div>
+
+        {scheduleError && (
+          <div className="px-6 py-3 text-sm text-red-600 dark:text-red-300">{scheduleError}</div>
+        )}
+
+        <div className="px-6 py-6">
+          {loadingSchedule ? (
+            <p className="text-sm text-slate-500 dark:text-slate-300">Loading schedule…</p>
+          ) : scheduledVisits.length === 0 ? (
+            <p className="text-sm text-slate-500 dark:text-slate-300">
+              No scheduled visits for this week.
+            </p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
+              {Array.from({ length: 7 }, (_, index) => {
+                const day = addDays(weekStart, index);
+                const dayVisits = scheduledVisits.filter((visit) => {
+                  if (!visit.scheduledStart) return false;
+                  return isSameDay(new Date(visit.scheduledStart), day);
+                });
+
+                return (
+                  <div
+                    key={day.toISOString()}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                          {format(day, "EEE")}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-300">{format(day, "MMM d")}</p>
+                      </div>
+                      <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {dayVisits.length} event{dayVisits.length === 1 ? "" : "s"}
+                      </span>
+                    </div>
+
+                    {dayVisits.length === 0 ? (
+                      <p className="text-xs text-slate-500 dark:text-slate-300">No visits</p>
+                    ) : (
+                      <ul className="space-y-3">
+                        {dayVisits.map((visit) => (
+                          <li
+                            key={visit.id}
+                            className="rounded-md border border-slate-200 bg-white p-3 text-sm shadow-sm dark:border-slate-700 dark:bg-slate-800"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="font-medium text-slate-900 dark:text-slate-100">{visit.caregiverName}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-300">
+                                  {visit.scheduledStart
+                                    ? `${format(new Date(visit.scheduledStart), "p")} – ${
+                                        visit.scheduledEnd
+                                          ? format(new Date(visit.scheduledEnd), "p")
+                                          : "TBD"
+                                      }`
+                                    : "No time set"}
+                                </p>
+                                {visit.serviceCode && (
+                                  <p className="text-xs text-slate-500 dark:text-slate-300">Service: {visit.serviceCode}</p>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  void doDeleteScheduledVisit(visit.id);
+                                }}
+                                className="rounded-md border border-red-300 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
     </main>

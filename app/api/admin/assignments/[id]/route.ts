@@ -108,3 +108,26 @@ export async function PATCH(request: Request, { params }: AssignmentRouteContext
     return NextResponse.json({ error: "Unable to update assignment" }, { status: 500 });
   }
 }
+
+// ---------- DELETE: remove caregiverAssignment by id ----------
+export async function DELETE(_request: Request, { params }: AssignmentRouteContext) {
+  const { id } = await params;
+
+  if (!id) {
+    return NextResponse.json({ error: "Missing assignment id" }, { status: 400 });
+  }
+
+  try {
+    await requireApiUserRole("admin");
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await prisma.caregiverAssignment.delete({ where: { id } });
+    return NextResponse.json({ id });
+  } catch (error: unknown) {
+    console.error("Failed to delete assignment", error);
+    return NextResponse.json({ error: "Unable to delete assignment" }, { status: 500 });
+  }
+}
