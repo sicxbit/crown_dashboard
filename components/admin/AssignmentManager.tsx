@@ -309,36 +309,6 @@ export default function AssignmentManager({ clients, caregivers }: Props) {
     }
   }
 
-  async function doDeleteScheduledVisit(visitId: string) {
-    const confirmed = window.confirm(
-      "Delete this scheduled visit? This will remove it from the calendar."
-    );
-
-    if (!confirmed) return;
-
-    setScheduledVisits((prev) => prev.filter((visit) => visit.id !== visitId));
-
-    try {
-      const response = await fetch(`/api/admin/schedule/${visitId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const json: unknown = await response.json().catch(() => null);
-        const apiError = getApiErrorMessage(json);
-        throw new Error(apiError ?? "Unable to delete scheduled visit");
-      }
-    } catch (err: unknown) {
-      console.error(err);
-      setScheduleError(
-        err instanceof Error ? err.message : "Unable to delete scheduled visit"
-      );
-      if (selectedClientId) {
-        await loadSchedule(selectedClientId, weekStart);
-      }
-    }
-  }
-
   return (
     <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 p-6">
       <header className="flex flex-col gap-2">
